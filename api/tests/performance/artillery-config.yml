@@ -1,0 +1,330 @@
+# Artillery Load Testing Configuration for RAG-Anything API
+config:
+  target: 'http://localhost:3000'
+  phases:
+    # Warm-up phase
+    - duration: 120  # 2 minutes
+      arrivalRate: 5
+      name: "Warm-up"
+    
+    # Ramp-up phase
+    - duration: 300  # 5 minutes  
+      arrivalRate: 5
+      rampTo: 25
+      name: "Ramp-up"
+    
+    # Sustained load phase
+    - duration: 600  # 10 minutes
+      arrivalRate: 25
+      name: "Sustained Load"
+    
+    # Spike test phase
+    - duration: 60   # 1 minute
+      arrivalRate: 50
+      name: "Spike Test"
+    
+    # Cool-down phase
+    - duration: 120  # 2 minutes
+      arrivalRate: 10
+      name: "Cool-down"
+
+  # Performance requirements
+  ensure:
+    # Response time requirements
+    - p95: 2000      # 95% of requests under 2s
+    - p99: 5000      # 99% of requests under 5s
+    - maxErrorRate: 5 # Error rate under 5%
+
+  # HTTP configuration
+  http:
+    timeout: 30
+    pool: 50        # Connection pool size
+    maxSockets: 50  # Max concurrent connections
+
+  # Payload configuration
+  payload:
+    path: "test-data.csv"
+    fields:
+      - "email"
+      - "password"
+      - "query"
+      - "document_content"
+
+  # Variables for test data
+  variables:
+    baseUrl: "http://localhost:3000/api/v1"
+    testEmails:
+      - "loadtest1@artillery.com"
+      - "loadtest2@artillery.com" 
+      - "loadtest3@artillery.com"
+      - "loadtest4@artillery.com"
+      - "loadtest5@artillery.com"
+    
+    testQueries:
+      - "What is artificial intelligence?"
+      - "Explain machine learning concepts"
+      - "How does natural language processing work?"
+      - "What are neural networks?"
+      - "Describe deep learning algorithms"
+      - "What is computer vision?"
+      - "How do recommendation systems work?"
+      - "What is reinforcement learning?"
+      - "Explain data preprocessing techniques"
+      - "What are the applications of AI?"
+
+  # Plugin configurations
+  plugins:
+    metrics-by-endpoint:
+      useOnlyRequestNames: true
+    
+    publish-metrics:
+      - type: statsd
+        host: localhost
+        port: 8125
+        prefix: "artillery.rag_api"
+    
+    # Expect plugin for assertions
+    expect: {}
+
+# Test scenarios
+scenarios:
+  # Main user workflow scenario
+  - name: "Complete User Workflow"
+    weight: 70
+    flow:
+      # Authentication phase
+      - post:
+          url: "{{ baseUrl }}/auth/register"
+          json:
+            email: "{{ $randomString() }}@loadtest.com"
+            password: "LoadTest123!"
+            role: "user"
+          capture:
+            - json: "$.success"
+              as: "registrationSuccess"
+          expect:
+            - statusCode: 201
+            - hasProperty: "data.user.id"
+      
+      - post:
+          url: "{{ baseUrl }}/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "LoadTest123!"
+          capture:
+            - json: "$.data.access_token"
+              as: "authToken"
+            - json: "$.data.user.id"
+              as: "userId"
+          expect:
+            - statusCode: 200
+            - hasProperty: "data.access_token"
+
+      # Document upload phase
+      - post:
+          url: "{{ baseUrl }}/documents/upload"
+          beforeRequest: "setAuthHeader"
+          formData:
+            file: "@test-document.txt"
+          capture:
+            - json: "$.data.documentId"
+              as: "documentId"
+            - json: "$.data.jobId"
+              as: "jobId"
+          expect:
+            - statusCode: 201
+            - hasProperty: "data.documentId"
+
+      # Wait for processing
+      - think: 3
+
+      # Query execution phase
+      - post:
+          url: "{{ baseUrl }}/query"
+          beforeRequest: "setAuthHeader"
+          json:
+            query: "{{ $randomElement(testQueries) }}"
+            mode: "{{ $randomElement(['local', 'global', 'hybrid', 'mix']) }}"
+            queryType: "text"
+          capture:
+            - json: "$.data.queryId"
+              as: "queryId"
+          expect:
+            - statusCode: 200
+            - hasProperty: "data.result"
+
+      # Document listing
+      - get:
+          url: "{{ baseUrl }}/documents"
+          beforeRequest: "setAuthHeader"
+          expect:
+            - statusCode: 200
+            - hasProperty: "data.documents"
+
+      # Query history
+      - get:
+          url: "{{ baseUrl }}/queries/history?limit=10"
+          beforeRequest: "setAuthHeader"
+          expect:
+            - statusCode: 200
+            - hasProperty: "data.queries"
+
+  # Query-heavy scenario
+  - name: "Query Heavy Load"
+    weight: 20
+    flow:
+      # Quick authentication
+      - post:
+          url: "{{ baseUrl }}/auth/login"
+          json:
+            email: "{{ $randomElement(testEmails) }}"
+            password: "LoadTest123!"
+          capture:
+            - json: "$.data.access_token"
+              as: "authToken"
+          expect:
+            - statusCode: 200
+
+      # Multiple queries
+      - loop:
+          - post:
+              url: "{{ baseUrl }}/query"
+              beforeRequest: "setAuthHeader"
+              json:
+                query: "{{ $randomElement(testQueries) }}"
+                mode: "{{ $randomElement(['local', 'global', 'hybrid']) }}"
+                queryType: "text"
+              expect:
+                - statusCode: 200
+          - think: 1
+        count: 5
+
+  # Upload-heavy scenario
+  - name: "Upload Heavy Load"
+    weight: 10
+    flow:
+      # Authentication
+      - post:
+          url: "{{ baseUrl }}/auth/login"
+          json:
+            email: "{{ $randomElement(testEmails) }}"
+            password: "LoadTest123!"
+          capture:
+            - json: "$.data.access_token"
+              as: "authToken"
+          expect:
+            - statusCode: 200
+
+      # Multiple uploads
+      - loop:
+          - post:
+              url: "{{ baseUrl }}/documents/upload"
+              beforeRequest: "setAuthHeader"
+              formData:
+                file: "@test-document-{{ $randomInt(1, 5) }}.txt"
+              expect:
+                - statusCode: 201
+          - think: 2
+        count: 3
+
+# Before request hooks
+before:
+  flow:
+    # Create test users for reuse
+    - log: "Setting up test environment"
+    - loop:
+        - post:
+            url: "{{ baseUrl }}/auth/register"
+            json:
+              email: "{{ $randomElement(testEmails) }}"
+              password: "LoadTest123!"
+              role: "user"
+        count: 5
+
+# After response hooks
+after:
+  flow:
+    - log: "Test completed successfully"
+
+# Custom JavaScript functions
+processor:
+  # Set authorization header
+  setAuthHeader: |
+    function(requestParams, context, ee, next) {
+      if (context.vars.authToken) {
+        requestParams.headers = requestParams.headers || {};
+        requestParams.headers['Authorization'] = `Bearer ${context.vars.authToken}`;
+      }
+      return next();
+    }
+
+  # Generate random test data
+  generateTestData: |
+    function(requestParams, context, ee, next) {
+      const documents = [
+        'Machine learning is a powerful subset of AI...',
+        'Natural language processing enables computers to understand human language...',
+        'Computer vision allows machines to interpret visual information...',
+        'Deep learning uses neural networks to learn complex patterns...',
+        'Reinforcement learning trains agents through trial and error...'
+      ];
+      
+      context.vars.randomDocument = documents[Math.floor(Math.random() * documents.length)];
+      return next();
+    }
+
+  # Log performance metrics
+  logMetrics: |
+    function(requestParams, response, context, ee, next) {
+      if (response.timings) {
+        console.log(`Request to ${requestParams.url} took ${response.timings.response}ms`);
+      }
+      return next();
+    }
+
+# Report configuration
+reporting:
+  output:
+    - json
+    - html
+  
+  # Custom metrics
+  customMetrics:
+    - name: "auth_success_rate"
+      unit: "percent"
+      aggregate: "avg"
+    
+    - name: "upload_success_rate"  
+      unit: "percent"
+      aggregate: "avg"
+    
+    - name: "query_success_rate"
+      unit: "percent"
+      aggregate: "avg"
+
+# Environment-specific configurations
+environments:
+  development:
+    target: 'http://localhost:3000'
+    phases:
+      - duration: 60
+        arrivalRate: 5
+  
+  staging:
+    target: 'https://staging-api.rag-anything.com'
+    phases:
+      - duration: 300
+        arrivalRate: 10
+        rampTo: 25
+  
+  production:
+    target: 'https://api.rag-anything.com'
+    phases:
+      - duration: 600
+        arrivalRate: 20
+        rampTo: 50
+    
+    # Production-specific settings
+    http:
+      timeout: 60
+      pool: 100
