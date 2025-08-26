@@ -1,351 +1,381 @@
-# RAG-Anything + Graphiti Integration - Acceptance Criteria
+# Acceptance Criteria: RAG-Anything + Graphiti-Core Integration
 
 ## Overview
 
-This document defines detailed acceptance criteria for the RAG-Anything + Graphiti integration project, including specific test coverage metrics, security validation criteria, and performance benchmarks. These criteria serve as measurable quality gates that must be satisfied before considering any component or feature complete.
-
-## Functional Component Acceptance Criteria
-
-### AC-001: Backend Abstraction Layer
-**Component**: Core backend interface and implementations
-
-**Test Coverage Requirements**:
-- **Unit Test Coverage**: ≥95% for all interface methods and implementations
-- **Integration Test Coverage**: ≥90% for backend switching and compatibility scenarios
-- **Error Handling Coverage**: ≥95% for exception paths and failure scenarios
-
-**Acceptance Criteria**:
-- [ ] **AC-001.1**: Abstract `BackendInterface` class defines all required methods with clear contracts
-  - Test: Unit tests for each method signature validation
-  - Coverage: 100% of interface method definitions
-  - Security: Input validation tests for all method parameters
-
-- [ ] **AC-001.2**: `LightRAGBackend` implementation maintains 100% backward compatibility
-  - Test: Regression test suite comparing old vs new implementation outputs
-  - Coverage: ≥95% unit test coverage for all LightRAG-specific methods
-  - Performance: Processing time ≤105% of baseline implementation
-
-- [ ] **AC-001.3**: `GraphitiBackend` implementation follows same interface contract
-  - Test: Interface compliance tests ensuring method compatibility
-  - Coverage: ≥95% unit test coverage for all Graphiti-specific methods
-  - Validation: Schema validation tests for episode conversion
-
-- [ ] **AC-001.4**: Backend selection mechanism works reliably
-  - Test: Configuration-based backend selection tests
-  - Coverage: ≥90% for configuration loading and validation logic
-  - Security: Access control tests for backend selection permissions
-
-**Quality Gates**:
-- All unit tests pass with ≥95% coverage
-- No breaking changes to public API interfaces
-- Performance degradation ≤5% for LightRAG backend operations
-- Zero critical security vulnerabilities in backend abstraction layer
-
-### AC-002: Multimodal Content to Episode Conversion
-**Component**: Content processing and episode generation
-
-**Test Coverage Requirements**:
-- **Unit Test Coverage**: ≥90% for each content type processor
-- **Integration Test Coverage**: ≥85% for end-to-end conversion pipeline
-- **Content Type Coverage**: ≥90% for each supported multimodal format
-
-**Acceptance Criteria**:
-- [ ] **AC-002.1**: Text content conversion maintains semantic accuracy
-  - Test: Semantic similarity scores ≥0.95 between original and episode content
-  - Coverage: ≥90% unit test coverage for text processors
-  - Validation: Ground truth comparison tests with expert annotations
-
-- [ ] **AC-002.2**: Image content conversion captures visual context accurately
-  - Test: Vision model description quality assessment (human evaluation ≥4.0/5.0)
-  - Coverage: ≥85% unit test coverage for image processing pipeline
-  - Performance: Image processing time ≤30 seconds per image
-
-- [ ] **AC-002.3**: Table content conversion preserves structural relationships
-  - Test: Structural integrity tests comparing original vs converted table data
-  - Coverage: ≥90% unit test coverage for table extraction and conversion
-  - Accuracy: ≥95% cell content preservation rate
-
-- [ ] **AC-002.4**: Equation content conversion maintains mathematical meaning
-  - Test: Mathematical expression parsing accuracy ≥90%
-  - Coverage: ≥85% unit test coverage for equation processing
-  - Validation: LaTeX/MathML compatibility tests
-
-**Quality Gates**:
-- Content conversion accuracy ≥90% across all modalities
-- Episode generation success rate ≥95% for valid inputs
-- Temporal attribution accuracy ≥95% for timestamped content
-- Cross-modal relationship preservation ≥85%
-
-### AC-003: Graphiti Knowledge Graph Construction
-**Component**: Entity extraction and graph building
-
-**Test Coverage Requirements**:
-- **Unit Test Coverage**: ≥90% for entity extraction and relationship modeling
-- **Integration Test Coverage**: ≥85% for complete graph construction pipeline
-- **Graph Quality Coverage**: ≥80% validation coverage for graph metrics
-
-**Acceptance Criteria**:
-- [ ] **AC-003.1**: Entity extraction achieves target accuracy across content types
-  - Test: F1 score ≥0.85 for entity extraction from multimodal content
-  - Coverage: ≥90% unit test coverage for entity extraction algorithms
-  - Validation: Cross-validation against manually annotated datasets
-
-- [ ] **AC-003.2**: Relationship extraction captures semantic connections accurately
-  - Test: F1 score ≥0.80 for relationship extraction across modalities
-  - Coverage: ≥85% unit test coverage for relationship modeling
-  - Quality: Precision ≥0.85 for high-confidence relationships
-
-- [ ] **AC-003.3**: Temporal modeling provides accurate timeline representations
-  - Test: ≥90% accuracy for temporal relationship assignment
-  - Coverage: ≥85% unit test coverage for temporal processing
-  - Consistency: Timeline ordering accuracy ≥95%
-
-- [ ] **AC-003.4**: Community detection groups related concepts coherently
-  - Test: Modularity score ≥0.3 for detected communities
-  - Coverage: ≥80% unit test coverage for community detection algorithms
-  - Validation: Human evaluation of community coherence ≥3.5/5.0
-
-**Quality Gates**:
-- Overall graph construction quality score ≥0.80
-- Entity resolution accuracy ≥0.85 across all content types
-- Graph scalability demonstrated up to 1M entities
-- Community detection provides meaningful knowledge groupings
-
-### AC-004: Enhanced Query Capabilities
-**Component**: Query processing and retrieval systems
-
-**Test Coverage Requirements**:
-- **Unit Test Coverage**: ≥85% for query processing and ranking algorithms
-- **Integration Test Coverage**: ≥80% for end-to-end query scenarios
-- **Query Type Coverage**: ≥90% for each supported query modality
-
-**Acceptance Criteria**:
-- [ ] **AC-004.1**: Hybrid search improves relevance over vector-only search
-  - Test: NDCG@10 improvement ≥20% compared to baseline
-  - Coverage: ≥85% unit test coverage for hybrid ranking algorithms
-  - Performance: Query response time ≤2 seconds for 95th percentile
-
-- [ ] **AC-004.2**: Cross-modal queries find relevant content across modalities
-  - Test: Cross-modal retrieval accuracy ≥75%
-  - Coverage: ≥80% unit test coverage for cross-modal query processing
-  - Validation: User satisfaction scores ≥4.0/5.0 for cross-modal results
-
-- [ ] **AC-004.3**: Entity-centric queries provide comprehensive entity context
-  - Test: Entity context completeness ≥90% for known entities
-  - Coverage: ≥85% unit test coverage for entity-centric retrieval
-  - Quality: Relevance scores ≥0.80 for entity-related content
-
-- [ ] **AC-004.4**: Temporal queries enable effective time-based exploration
-  - Test: Temporal query precision ≥85% for time-bounded searches
-  - Coverage: ≥80% unit test coverage for temporal query processing
-  - Performance: Temporal filtering adds ≤20% to query latency
-
-**Quality Gates**:
-- Overall query performance improvement ≥15% over baseline
-- Query success rate ≥95% for well-formed queries
-- Result relevance consistently ≥0.75 across query types
-- Query latency meets interactive requirements (≤2s)
-
-## Security Acceptance Criteria
-
-### AC-005: Input Validation and Sanitization
-**Component**: API security and input processing
-
-**Test Coverage Requirements**:
-- **Security Test Coverage**: ≥95% for all input validation scenarios
-- **Attack Vector Coverage**: ≥90% for OWASP Top 10 threat categories
-- **Validation Rule Coverage**: 100% for all defined input constraints
-
-**Acceptance Criteria**:
-- [ ] **AC-005.1**: File upload validation prevents malicious content
-  - Test: Automated security tests for file type, size, and content validation
-  - Coverage: ≥95% security test coverage for upload endpoints
-  - Protection: Zero bypass rate for malicious file detection
-
-- [ ] **AC-005.2**: Query parameter sanitization prevents injection attacks
-  - Test: SQL injection, NoSQL injection, and command injection prevention tests
-  - Coverage: ≥95% test coverage for all query parameters
-  - Security: Zero successful injection attacks in penetration testing
-
-- [ ] **AC-005.3**: Request body validation enforces schema compliance
-  - Test: Schema validation tests for all API endpoints
-  - Coverage: ≥90% test coverage for request body validation logic
-  - Robustness: Graceful handling of malformed requests
-
-**Quality Gates**:
-- Zero critical security vulnerabilities in input validation
-- All input validation tests pass with ≥95% coverage
-- Penetration testing shows no exploitable input validation flaws
-- OWASP compliance verification passes all applicable tests
-
-### AC-006: Rate Limiting and Authentication
-**Component**: API access control and throttling
-
-**Test Coverage Requirements**:
-- **Rate Limiting Coverage**: ≥90% for all rate limiting scenarios
-- **Authentication Coverage**: ≥95% for all authentication pathways
-- **Authorization Coverage**: ≥90% for role-based access control
-
-**Acceptance Criteria**:
-- [ ] **AC-006.1**: Rate limiting prevents abuse and ensures fair usage
-  - Test: Rate limiting enforcement tests for different user tiers
-  - Coverage: ≥90% test coverage for rate limiting middleware
-  - Performance: Rate limiting adds ≤5ms to request latency
-
-- [ ] **AC-006.2**: Authentication mechanisms secure all protected endpoints
-  - Test: Authentication bypass prevention tests
-  - Coverage: ≥95% test coverage for authentication logic
-  - Security: Support for multiple secure authentication methods
-
-- [ ] **AC-006.3**: Authorization controls access based on user roles and permissions
-  - Test: Role-based access control tests for all permission levels
-  - Coverage: ≥90% test coverage for authorization logic
-  - Compliance: Audit trail completeness for access decisions
-
-**Quality Gates**:
-- Authentication success rate ≥99.9% for valid credentials
-- Authorization errors properly logged and monitored
-- Rate limiting effectively prevents abuse without impacting legitimate usage
-- Security audit confirms robust access control implementation
-
-## Performance Acceptance Criteria
-
-### AC-007: Processing Performance
-**Component**: Document processing and graph construction
-
-**Test Coverage Requirements**:
-- **Performance Test Coverage**: ≥85% for all critical processing paths
-- **Benchmark Coverage**: ≥90% for different document types and sizes
-- **Scalability Test Coverage**: ≥80% for concurrent processing scenarios
-
-**Acceptance Criteria**:
-- [ ] **AC-007.1**: Document processing time remains within acceptable bounds
-  - Test: Automated performance benchmarks for different document types
-  - Target: Processing time ≤130% of LightRAG baseline
-  - Measurement: P95 processing time ≤5 seconds for typical documents
-
-- [ ] **AC-007.2**: Knowledge graph construction scales with content size
-  - Test: Scalability tests with varying document collection sizes
-  - Target: Linear scaling up to 10,000 documents
-  - Performance: Memory usage ≤150% of baseline for equivalent operations
-
-- [ ] **AC-007.3**: Concurrent processing maintains system stability
-  - Test: Load tests with multiple concurrent document processing requests
-  - Target: System stable with ≥100 concurrent processing jobs
-  - Quality: Success rate ≥95% under maximum load
-
-**Quality Gates**:
-- All performance benchmarks meet or exceed target thresholds
-- System resource usage remains within planned capacity
-- Performance regression testing prevents significant degradation
-- Scalability testing confirms production readiness
-
-### AC-008: Query Performance
-**Component**: Search and retrieval operations
-
-**Test Coverage Requirements**:
-- **Query Performance Coverage**: ≥90% for all query types
-- **Load Testing Coverage**: ≥85% for concurrent query scenarios
-- **Response Time Coverage**: ≥95% for latency-critical operations
-
-**Acceptance Criteria**:
-- [ ] **AC-008.1**: Query response times meet interactive requirements
-  - Test: Response time measurements for different query complexities
-  - Target: P95 response time ≤2 seconds for all query types
-  - Performance: Simple queries complete ≤500ms
-
-- [ ] **AC-008.2**: Concurrent query processing maintains performance
-  - Test: Load testing with multiple concurrent users
-  - Target: Performance stable with ≥50 concurrent queries
-  - Quality: Response time increase ≤50% under maximum concurrent load
-
-- [ ] **AC-008.3**: Complex graph queries complete within acceptable timeframes
-  - Test: Performance tests for community detection and path finding queries
-  - Target: Complex queries complete ≤10 seconds
-  - Optimization: Query optimization reduces execution time by ≥30%
-
-**Quality Gates**:
-- Query performance meets all defined response time targets
-- System handles concurrent query load without degradation
-- Complex queries complete within user experience requirements
-- Performance monitoring confirms consistent query latency
-
-## Data Quality and Validation Criteria
-
-### AC-009: Data Integrity and Consistency
-**Component**: Data storage and retrieval accuracy
-
-**Test Coverage Requirements**:
-- **Data Integrity Coverage**: ≥95% for all data persistence operations
-- **Consistency Test Coverage**: ≥90% for cross-backend data validation
-- **Corruption Prevention Coverage**: ≥85% for data integrity scenarios
-
-**Acceptance Criteria**:
-- [ ] **AC-009.1**: Data persistence maintains content accuracy
-  - Test: Content integrity verification after storage and retrieval
-  - Target: ≥99.9% data accuracy preservation
-  - Validation: Checksums and content verification for all stored data
-
-- [ ] **AC-009.2**: Backend migration preserves data consistency
-  - Test: Data migration tests between LightRAG and Graphiti backends
-  - Target: 100% data preservation during backend transitions
-  - Integrity: Automated consistency checks after migration
-
-- [ ] **AC-009.3**: Concurrent operations maintain data consistency
-  - Test: Concurrent read/write operations with consistency verification
-  - Target: Zero data corruption under concurrent access
-  - Reliability: ACID compliance for critical data operations
-
-**Quality Gates**:
-- Data integrity tests pass with ≥99.9% accuracy
-- No data loss or corruption under normal or stress conditions
-- Consistency checks confirm reliable data storage and retrieval
-- Backup and recovery procedures tested and verified
-
-## Testing Strategy Implementation
-
-### Unit Testing Requirements
-- **Coverage Target**: ≥90% line coverage, ≥85% branch coverage
-- **Test Framework**: pytest with coverage reporting
-- **Mocking Strategy**: Comprehensive mocking for external dependencies
-- **Assertion Standards**: Clear, descriptive assertions with detailed failure messages
-
-### Integration Testing Requirements
-- **Coverage Target**: ≥85% for cross-component integration scenarios
-- **Test Environment**: Isolated test environment with controlled dependencies
-- **Data Management**: Test data fixtures and cleanup procedures
-- **Error Scenarios**: Comprehensive testing of failure modes and recovery
-
-### End-to-End Testing Requirements
-- **Coverage Target**: ≥80% for complete user workflows
-- **API Testing**: Comprehensive testing of all REST endpoints
-- **Performance Integration**: Performance validation in realistic scenarios
-- **User Experience**: Validation of complete user journey scenarios
-
-### Security Testing Requirements
-- **Penetration Testing**: External security assessment with zero critical findings
-- **Vulnerability Scanning**: Automated scanning integrated into CI/CD pipeline
-- **Compliance Testing**: OWASP Top 10 and industry standard compliance
-- **Access Control Testing**: Comprehensive authentication and authorization validation
-
-## Quality Assurance Framework
-
-### Automated Quality Gates
-- **Code Coverage**: Minimum 90% coverage required for pull request approval
-- **Security Scanning**: Zero critical vulnerabilities for production deployment
-- **Performance Benchmarks**: No regression beyond defined thresholds
-- **Integration Testing**: All integration tests must pass before merge
-
-### Manual Validation Requirements
-- **User Experience Testing**: Manual testing of key user workflows
-- **Security Review**: Manual security review for critical components
-- **Performance Analysis**: Manual analysis of performance bottlenecks
-- **Documentation Review**: Technical writing review for accuracy and completeness
-
-### Continuous Monitoring
-- **Quality Metrics Dashboard**: Real-time tracking of quality metrics
-- **Performance Monitoring**: Continuous monitoring of system performance
-- **Error Rate Tracking**: Automated monitoring and alerting for error rates
-- **User Feedback Integration**: Regular collection and analysis of user feedback
-
-This comprehensive acceptance criteria framework ensures that the RAG-Anything + Graphiti integration meets the highest standards of quality, security, and performance while providing clear, measurable targets for development teams to achieve.
+This document provides measurable success criteria for the RAG-Anything + Graphiti-Core direct integration project. These criteria define what constitutes successful completion of each major component and the overall project.
+
+## Success Measurement Framework
+
+### Measurement Types
+- **Quantitative Metrics**: Measurable numerical targets
+- **Qualitative Assessments**: Observable behavior and functionality
+- **Performance Benchmarks**: Comparative performance measurements
+- **User Experience Validation**: End-user satisfaction and usability
+
+### Validation Methods
+- **Automated Testing**: Unit, integration, and end-to-end tests
+- **Performance Testing**: Load testing, stress testing, and benchmarking
+- **Manual Testing**: User acceptance testing and exploratory testing
+- **Code Review**: Peer review and architectural validation
+
+---
+
+## 1. Direct Library Integration
+
+### AC-001: Graphiti-Core Library Import and Usage
+**Validation Method**: Automated Testing + Code Review
+
+**Success Criteria**:
+- [ ] **WHEN** RAG-Anything initializes **THEN** it successfully imports graphiti-core without network dependencies
+  - **Measurement**: Zero HTTP requests to external Graphiti services during initialization
+  - **Test**: Monitor network traffic during system startup
+  
+- [ ] **WHEN** processing documents **THEN** all operations use direct library calls to graphiti-core
+  - **Measurement**: 100% of Graphiti operations use in-process library calls
+  - **Test**: Code analysis confirms no `requests` or HTTP client usage for Graphiti operations
+  
+- [ ] **WHEN** system operates **THEN** performance improvement is measurable compared to REST API approach
+  - **Measurement**: 30-50% reduction in processing latency for equivalent operations
+  - **Test**: Benchmark comparison between REST API and direct library approaches
+
+### AC-002: Source-Based Installation and Build
+**Validation Method**: Automated Testing + Manual Deployment Testing
+
+**Success Criteria**:
+- [ ] **WHEN** setup script runs **THEN** it automatically detects and builds graphiti-core from ../graphiti
+  - **Measurement**: 100% success rate in clean environment installations
+  - **Test**: Automated CI/CD pipeline builds from scratch successfully
+  
+- [ ] **WHEN** dependencies are installed **THEN** all graphiti-core requirements are satisfied
+  - **Measurement**: Zero missing dependency errors during runtime
+  - **Test**: Dependency verification script reports all requirements met
+  
+- [ ] **WHEN** development mode is enabled **THEN** changes to graphiti-core source are reflected without restart
+  - **Measurement**: Modified graphiti-core functions are available within 5 seconds
+  - **Test**: Modify graphiti-core source file and verify changes are reflected
+
+---
+
+## 2. Multimodal Content Processing
+
+### AC-003: Document-to-Episode Conversion
+**Validation Method**: Automated Testing + Content Quality Assessment
+
+**Success Criteria**:
+- [ ] **WHEN** MinerU processes documents **THEN** content segments become Graphiti episodes with 100% conversion rate
+  - **Measurement**: Every parsed content item results in a corresponding episode
+  - **Test**: Verify episode count matches parsed content item count
+  
+- [ ] **WHEN** episodes are created **THEN** metadata preservation is complete and accurate
+  - **Measurement**: 100% of source metadata (page numbers, document info, timestamps) preserved
+  - **Test**: Validate metadata roundtrip accuracy for sample documents
+  
+- [ ] **WHEN** hierarchical content exists **THEN** episode relationships preserve document structure
+  - **Measurement**: Document outline hierarchy is maintained in episode relationship graph
+  - **Test**: Query episode relationships and verify they match original document structure
+
+### AC-004: Image Content Processing
+**Validation Method**: Manual Testing + Vision Model Quality Assessment
+
+**Success Criteria**:
+- [ ] **WHEN** images are processed **THEN** vision model generates meaningful descriptions
+  - **Measurement**: Human evaluators rate descriptions as "good" or "excellent" for 90% of images
+  - **Test**: Manual evaluation of vision model outputs using standardized rubric
+  
+- [ ] **WHEN** image episodes are created **THEN** spatial context relationships are preserved
+  - **Measurement**: Images maintain references to surrounding text content within same page/section
+  - **Test**: Verify image-text proximity relationships are captured in episode links
+  
+- [ ] **WHEN** querying visual content **THEN** relevant images are retrievable with context
+  - **Measurement**: Visual queries return relevant images with >85% accuracy
+  - **Test**: Standard visual query test suite with ground truth answers
+
+### AC-005: Table and Equation Processing
+**Validation Method**: Automated Testing + Domain Expert Review
+
+**Success Criteria**:
+- [ ] **WHEN** tables are processed **THEN** structural relationships are captured in episodes
+  - **Measurement**: Table headers, data relationships, and statistical patterns are identified
+  - **Test**: Verify table structure extraction accuracy against manually annotated dataset
+  
+- [ ] **WHEN** equations are processed **THEN** symbolic and semantic meaning is captured
+  - **Measurement**: Mathematical relationships are correctly identified and described
+  - **Test**: Mathematical content processing evaluated by domain experts for accuracy
+
+---
+
+## 3. Knowledge Graph Construction
+
+### AC-006: Multimodal Entity Extraction
+**Validation Method**: Automated Testing + Manual Validation
+
+**Success Criteria**:
+- [ ] **WHEN** multimodal content is processed **THEN** entities are extracted from all content types
+  - **Measurement**: Entities identified in text, image descriptions, tables, and equations
+  - **Test**: Verify entity extraction across all supported content modalities
+  
+- [ ] **WHEN** entities are extracted **THEN** accuracy meets or exceeds baseline performance
+  - **Measurement**: Entity extraction F1-score ≥ 0.85 for text, ≥ 0.75 for other modalities
+  - **Test**: Compare against manually annotated ground truth dataset
+  
+- [ ] **WHEN** entities are created **THEN** confidence scores and provenance are maintained
+  - **Measurement**: 100% of entities include confidence scores and source attribution
+  - **Test**: Validate entity metadata completeness and accuracy
+
+### AC-007: Cross-Modal Relationship Detection
+**Validation Method**: Manual Testing + Graph Analysis
+
+**Success Criteria**:
+- [ ] **WHEN** cross-modal content is processed **THEN** relationships are identified between modalities
+  - **Measurement**: Cross-modal relationships detected between text-image, text-table, text-equation pairs
+  - **Test**: Manual validation of cross-modal relationships in sample documents
+  
+- [ ] **WHEN** relationships are extracted **THEN** they include appropriate confidence and context
+  - **Measurement**: Relationship confidence scores correlate with human judgment (r > 0.7)
+  - **Test**: Human evaluators assess relationship quality and confidence calibration
+
+### AC-008: Community Detection
+**Validation Method**: Graph Analysis + Domain Expert Review
+
+**Success Criteria**:
+- [ ] **WHEN** sufficient content exists **THEN** communities are automatically detected
+  - **Measurement**: Communities form with modularity score > 0.3 for knowledge graphs with >100 entities
+  - **Test**: Apply community detection algorithms and measure modularity
+  
+- [ ] **WHEN** communities are formed **THEN** they represent coherent knowledge domains
+  - **Measurement**: Domain experts rate community coherence as "good" or "excellent" for >80% of communities
+  - **Test**: Expert evaluation of detected communities for semantic coherence
+
+---
+
+## 4. REST Service Implementation
+
+### AC-009: Document Processing API
+**Validation Method**: API Testing + Performance Testing
+
+**Success Criteria**:
+- [ ] **WHEN** documents are uploaded via API **THEN** processing completes successfully
+  - **Measurement**: 99.5% success rate for valid document uploads
+  - **Test**: Automated API testing with diverse document types and sizes
+  
+- [ ] **WHEN** processing occurs **THEN** status updates are provided in real-time
+  - **Measurement**: Status updates delivered within 2 seconds of processing milestones
+  - **Test**: WebSocket connection testing and message delivery verification
+  
+- [ ] **WHEN** processing completes **THEN** comprehensive results are returned
+  - **Measurement**: API responses include entities, relationships, and processing metadata
+  - **Test**: Validate API response completeness and format compliance
+
+### AC-010: Query API Performance
+**Validation Method**: Performance Testing + Load Testing
+
+**Success Criteria**:
+- [ ] **WHEN** queries are submitted **THEN** response time meets performance targets
+  - **Measurement**: 95% of queries respond within 2 seconds, 99% within 5 seconds
+  - **Test**: Load testing with concurrent queries and response time measurement
+  
+- [ ] **WHEN** complex graph queries are executed **THEN** results are accurate and complete
+  - **Measurement**: Query results match expected outcomes for standardized test queries
+  - **Test**: Query accuracy testing against known ground truth results
+
+---
+
+## 5. Migration and Compatibility
+
+### AC-011: Data Migration
+**Validation Method**: Data Integrity Testing + Performance Comparison
+
+**Success Criteria**:
+- [ ] **WHEN** LightRAG data is migrated **THEN** information is preserved without loss
+  - **Measurement**: 100% of migrated entities and relationships maintain core information
+  - **Test**: Compare pre/post migration data for completeness and accuracy
+  
+- [ ] **WHEN** migration completes **THEN** Graphiti system provides equivalent or better performance
+  - **Measurement**: Query performance on migrated data within 20% of baseline LightRAG performance
+  - **Test**: Benchmark queries on equivalent datasets before and after migration
+
+### AC-012: API Compatibility
+**Validation Method**: Regression Testing + Integration Testing
+
+**Success Criteria**:
+- [ ] **WHEN** existing API calls are made **THEN** they function identically with new backend
+  - **Measurement**: 100% of existing API endpoints maintain request/response compatibility
+  - **Test**: Comprehensive regression test suite covering all existing API operations
+  
+- [ ] **WHEN** applications use RAG-Anything APIs **THEN** no code changes are required for basic functionality
+  - **Measurement**: Existing client applications continue to function without modification
+  - **Test**: Integration testing with sample client applications
+
+---
+
+## 6. Performance and Scalability
+
+### AC-013: Processing Performance
+**Validation Method**: Performance Testing + Benchmarking
+
+**Success Criteria**:
+- [ ] **WHEN** documents are processed with Graphiti **THEN** performance is within acceptable bounds
+  - **Measurement**: Processing time within 30% of LightRAG baseline performance
+  - **Test**: Process identical document sets with both backends and compare timing
+  
+- [ ] **WHEN** concurrent processing occurs **THEN** system maintains performance under load
+  - **Measurement**: Support 10+ concurrent document processing jobs without degradation
+  - **Test**: Load testing with multiple simultaneous document processing requests
+  
+- [ ] **WHEN** large documents are processed **THEN** memory usage remains within limits
+  - **Measurement**: Peak memory usage < 8GB for single document processing
+  - **Test**: Memory profiling during processing of large document collections
+
+### AC-014: Graph Database Scalability
+**Validation Method**: Scalability Testing + Database Performance Analysis
+
+**Success Criteria**:
+- [ ] **WHEN** knowledge graphs grow large **THEN** query performance remains acceptable
+  - **Measurement**: Query response time < 2 seconds for graphs with 100k+ entities
+  - **Test**: Create large synthetic knowledge graphs and measure query performance
+  
+- [ ] **WHEN** multiple users query simultaneously **THEN** system maintains responsiveness
+  - **Measurement**: Response time degradation < 50% under 10x concurrent load
+  - **Test**: Concurrent user simulation with query performance monitoring
+
+---
+
+## 7. Security and Compliance
+
+### AC-015: Document Security
+**Validation Method**: Security Testing + Penetration Testing
+
+**Success Criteria**:
+- [ ] **WHEN** documents are uploaded **THEN** content validation prevents malicious inputs
+  - **Measurement**: 100% detection of malicious file types and content patterns
+  - **Test**: Security scanner testing with known malicious file samples
+  
+- [ ] **WHEN** API endpoints are accessed **THEN** authentication and authorization are enforced
+  - **Measurement**: Unauthorized access attempts are blocked with appropriate error responses
+  - **Test**: Authentication bypass testing and authorization verification
+  
+- [ ] **WHEN** errors occur **THEN** sensitive information is not exposed
+  - **Measurement**: Error messages and logs contain no sensitive document content
+  - **Test**: Error handling testing with sensitive document processing
+
+### AC-016: Audit and Compliance
+**Validation Method**: Audit Log Analysis + Compliance Review
+
+**Success Criteria**:
+- [ ] **WHEN** operations are performed **THEN** comprehensive audit logs are created
+  - **Measurement**: 100% of document processing and query operations are logged
+  - **Test**: Audit log completeness verification across all system operations
+  
+- [ ] **WHEN** audit reports are generated **THEN** they provide complete activity summaries
+  - **Measurement**: Audit reports include all required fields for compliance requirements
+  - **Test**: Compliance officer review of generated audit reports
+
+---
+
+## 8. System Quality and Reliability
+
+### AC-017: Testing Coverage
+**Validation Method**: Code Coverage Analysis + Test Quality Assessment
+
+**Success Criteria**:
+- [ ] **WHEN** test suites run **THEN** code coverage exceeds minimum thresholds
+  - **Measurement**: Unit test coverage >90%, integration test coverage >80%
+  - **Test**: Coverage analysis tools report coverage percentages by component
+  
+- [ ] **WHEN** tests execute **THEN** they provide meaningful validation of system behavior
+  - **Measurement**: Test suite catches 95% of intentionally introduced bugs
+  - **Test**: Mutation testing to validate test suite effectiveness
+  
+- [ ] **WHEN** CI/CD pipeline runs **THEN** all tests pass consistently
+  - **Measurement**: Test success rate >99.5% in CI/CD environment
+  - **Test**: CI/CD pipeline stability monitoring and failure analysis
+
+### AC-018: System Monitoring and Health
+**Validation Method**: Monitoring System Validation + Operational Testing
+
+**Success Criteria**:
+- [ ] **WHEN** system operates **THEN** health checks report accurate status
+  - **Measurement**: Health check endpoints respond within 1 second with accurate status
+  - **Test**: Health check response time and accuracy verification
+  
+- [ ] **WHEN** issues occur **THEN** monitoring systems provide timely alerts
+  - **Measurement**: Critical issues trigger alerts within 30 seconds of occurrence
+  - **Test**: Simulated failure scenarios and alert delivery testing
+  
+- [ ] **WHEN** system performance degrades **THEN** metrics capture performance trends
+  - **Measurement**: Performance metrics accurately reflect system behavior changes
+  - **Test**: Performance monitoring validation during controlled load variations
+
+---
+
+## 9. Documentation and Usability
+
+### AC-019: Documentation Completeness
+**Validation Method**: Documentation Review + User Testing
+
+**Success Criteria**:
+- [ ] **WHEN** users access documentation **THEN** it provides complete guidance for all features
+  - **Measurement**: 100% of API endpoints and features documented with examples
+  - **Test**: Documentation completeness audit and cross-reference verification
+  
+- [ ] **WHEN** tutorials are followed **THEN** users can successfully complete all procedures
+  - **Measurement**: 90% of new users complete tutorials without assistance
+  - **Test**: User testing with tutorial completion tracking and assistance requests
+
+### AC-020: Developer Experience
+**Validation Method**: Developer Onboarding Testing + Usability Assessment
+
+**Success Criteria**:
+- [ ] **WHEN** new developers start **THEN** they can set up development environment quickly
+  - **Measurement**: Development environment setup completes in <30 minutes
+  - **Test**: Time new developers from project clone to running tests
+  
+- [ ] **WHEN** developers make changes **THEN** feedback loops are fast and informative
+  - **Measurement**: Test execution and feedback provided within 2 minutes of changes
+  - **Test**: Developer workflow timing and feedback quality assessment
+
+---
+
+## Overall Project Success Criteria
+
+### Project-Level Success Metrics
+
+**Technical Success (Must Achieve All)**:
+- [ ] Zero breaking changes to existing RAG-Anything APIs
+- [ ] All functional requirements implemented and tested
+- [ ] Performance within 30% of baseline LightRAG implementation
+- [ ] Security audit passes with zero critical vulnerabilities
+- [ ] Test coverage >90% for all new integration components
+
+**Business Success (Must Achieve 4 of 5)**:
+- [ ] User adoption rate >80% within 6 months of release
+- [ ] Community feedback rating >4.0/5.0 in user surveys
+- [ ] Documentation completeness score >90% in independent review
+- [ ] Migration success rate >95% for existing deployments
+- [ ] Support ticket volume <10% increase compared to LightRAG baseline
+
+**Operational Success (Must Achieve 3 of 4)**:
+- [ ] System uptime >99.5% during first 3 months of operation
+- [ ] Processing throughput within 20% of baseline performance
+- [ ] Memory usage remains within specified limits under normal load
+- [ ] Error rates <0.5% for document processing operations
+
+### Release Readiness Checklist
+
+**Pre-Release Requirements (100% Must Be Complete)**:
+- [ ] All high-priority user stories completed and validated
+- [ ] Security penetration testing completed with issues resolved
+- [ ] Performance benchmarking completed with results within targets
+- [ ] Documentation review completed with stakeholder approval
+- [ ] Migration tools tested with representative datasets
+- [ ] Rollback procedures documented and tested
+- [ ] Monitoring and alerting systems configured and validated
+- [ ] Production deployment procedure validated in staging environment
+
+**Post-Release Success Indicators (Measured 30 days after release)**:
+- [ ] User adoption metrics meet or exceed targets
+- [ ] System performance metrics remain within acceptable ranges
+- [ ] Support ticket volume and resolution times meet SLA requirements
+- [ ] Community feedback indicates successful integration delivery
+
+This acceptance criteria framework provides measurable, testable validation for every aspect of the RAG-Anything + Graphiti-Core integration project, ensuring successful delivery and adoption of the enhanced system.

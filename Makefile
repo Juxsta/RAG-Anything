@@ -10,11 +10,14 @@ help:
 	@echo "Installation:"
 	@echo "  install          Install development dependencies"
 	@echo "  install-prod     Install production dependencies only"
+	@echo "  install-graphiti Install with Graphiti integration"
+	@echo "  build-graphiti   Build graphiti-core from source"
 	@echo ""
 	@echo "Testing:"
 	@echo "  test             Run all tests with coverage"
 	@echo "  test-security    Run security tests only"
 	@echo "  test-backends    Run backend tests only"
+	@echo "  test-graphiti    Run Graphiti integration tests"
 	@echo "  test-integration Run integration tests only"
 	@echo "  test-performance Run performance tests only"
 	@echo "  test-all         Run comprehensive test suite"
@@ -29,6 +32,12 @@ help:
 	@echo "Documentation:"
 	@echo "  docs             Build documentation"
 	@echo "  docs-serve       Serve documentation locally"
+	@echo ""
+	@echo "Services:"
+	@echo "  serve            Start FastAPI development server"
+	@echo "  serve-graphiti   Start FastAPI server with Graphiti backend"
+	@echo "  start-db         Start required database services"
+	@echo "  stop-db          Stop database services"
 	@echo ""
 	@echo "Deployment:"
 	@echo "  docker           Build Docker image"
@@ -67,6 +76,22 @@ install-prod: $(VENV_DIR)
 	$(PIP) install -e .
 	@echo "Production environment ready!"
 
+install-graphiti: $(VENV_DIR) build-graphiti
+	$(PIP) install -e .[graphiti,api]
+	@echo "RAG-Anything with Graphiti integration ready!"
+
+build-graphiti:
+	@echo "Building graphiti-core from source..."
+	@if [ -d "../graphiti" ]; then \
+		cd ../graphiti && pip install -e . --user --verbose; \
+		echo "✅ graphiti-core built and installed from source"; \
+	else \
+		echo "❌ Graphiti source directory not found at ../graphiti"; \
+		echo "Please clone graphiti repository to ../graphiti or install from PyPI:"; \
+		echo "pip install graphiti-core[falkordb]"; \
+		exit 1; \
+	fi
+
 $(VENV_DIR):
 	$(PYTHON) -m venv $(VENV_DIR)
 	$(PIP) install --upgrade pip setuptools wheel
@@ -80,6 +105,20 @@ test-security: $(VENV_DIR)
 
 test-backends: $(VENV_DIR)
 	$(PYTHON_VENV) -m pytest $(TEST_DIR)/backends -v --cov=$(SRC_DIR)/backends
+
+test-graphiti: $(VENV_DIR)
+	@echo "Testing Graphiti integration..."
+	$(PYTHON_VENV) -c "from raganything.backends.graphiti_direct import GraphitiDirectBackend; print('✅ Graphiti direct backend imports successfully')"
+	$(PYTHON_VENV) -c "from graphiti_core import Graphiti; print('✅ graphiti-core available')"
+	@if [ -f "test_comprehensive_integration.py" ]; then \
+		echo "🧪 Running comprehensive integration tests..."; \
+		PYTHONPATH=. $(PYTHON_VENV) test_comprehensive_integration.py; \
+	elif [ -f "test_graphiti_integration.py" ]; then \
+		echo "🧪 Running basic integration tests..."; \
+		$(PYTHON_VENV) test_graphiti_integration.py; \
+	else \
+		echo "⚠️  No Graphiti tests found"; \
+	fi
 
 test-integration: $(VENV_DIR)
 	$(PYTHON_VENV) -m pytest $(TEST_DIR)/integration -v
@@ -141,9 +180,36 @@ docker-run:
 	docker run -p 8000:8000 -v $(PWD):/app raganything:latest
 	@echo "Docker container running on http://localhost:8000"
 
-# Development server
+# Development servers
 serve: $(VENV_DIR)
-	$(PYTHON_VENV) -m uvicorn python-api.app.main:app --reload --host 0.0.0.0 --port 8000
+	@echo "Starting FastAPI development server..."
+	PYTHONPATH=. $(PYTHON_VENV) -m uvicorn raganything.api.main:GraphitiRAGApp --reload --host 0.0.0.0 --port 8000
+
+serve-graphiti: $(VENV_DIR)
+	@echo "Starting FastAPI server with Graphiti backend..."
+	RAG_BACKEND_TYPE=graphiti PYTHONPATH=. $(PYTHON_VENV) -m uvicorn raganything.api.main:GraphitiRAGApp --reload --host 0.0.0.0 --port 8000
+
+start-db:
+	@echo "Starting database services..."
+	@echo "Starting FalkorDB (Redis-based)..."
+	@if command -v redis-server > /dev/null; then \
+		redis-server --daemonize yes --port 6379; \
+		echo "✅ FalkorDB/Redis started on port 6379"; \
+	else \
+		echo "❌ Redis not found. Install with: sudo apt-get install redis-server"; \
+	fi
+	@echo "For Neo4j, please start it manually or use Docker:"
+	@echo "  docker run -d --name neo4j -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=neo4j/password neo4j:latest"
+
+stop-db:
+	@echo "Stopping database services..."
+	@if pgrep redis-server > /dev/null; then \
+		pkill redis-server; \
+		echo "✅ Redis/FalkorDB stopped"; \
+	else \
+		echo "Redis/FalkorDB was not running"; \
+	fi
+	@echo "To stop Neo4j Docker container: docker stop neo4j && docker rm neo4j"
 
 # Cleanup targets
 clean:

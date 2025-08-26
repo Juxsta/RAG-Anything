@@ -1,343 +1,304 @@
-# RAG-Anything + Graphiti Integration - Project Requirements
+# RAG-Anything + Graphiti-Core Direct Integration Requirements
 
 ## Executive Summary
 
-This project aims to integrate RAG-Anything's advanced multimodal document processing capabilities with Graphiti's knowledge graph system. The integration will enable users to process documents containing text, images, tables, and equations while building dynamic knowledge graphs that capture entities, relationships, and temporal patterns through Graphiti's episode-based model.
+This document outlines the requirements for refactoring RAG-Anything to integrate directly with graphiti-core as a library rather than using REST API calls. The integration will maintain RAG-Anything's multimodal document processing capabilities while leveraging Graphiti's episodic knowledge graph technology for enhanced knowledge representation and retrieval.
 
-**Project Scope**: Create a backend abstraction layer that allows RAG-Anything to work with both LightRAG and Graphiti, focusing on leveraging Graphiti's superior entity extraction, temporal modeling, and community detection capabilities.
+**Project Timeline:** 8-12 weeks  
+**Team Size:** 2-3 developers (1 senior, 1-2 mid-level)  
+**Priority:** High - Strategic enhancement for multimodal RAG capabilities
 
 ## Stakeholders
 
 ### Primary Users
-- **Data Scientists**: Need to process multimodal documents and build comprehensive knowledge graphs for research and analysis
-- **Enterprise Users**: Require robust document processing with advanced entity relationship mapping for business intelligence
-- **Developers**: Want to integrate multimodal RAG capabilities with knowledge graph backends
+- **Data Scientists & ML Engineers**: Need seamless multimodal RAG processing with advanced knowledge graph capabilities
+- **Document Processing Applications**: Require robust parsing of PDFs, Office docs, images with intelligent content extraction
+- **Enterprise Knowledge Management Systems**: Need scalable, production-ready multimodal content processing
 
 ### Secondary Users
-- **System Administrators**: Need to deploy, monitor, and maintain the integrated system
-- **ML Engineers**: Require access to parsed multimodal content and knowledge graph outputs for downstream applications
+- **Research Teams**: Academic/industry research requiring multimodal document analysis
+- **Content Management Platform Developers**: Building on top of RAG-Anything for specialized applications
+- **API Consumers**: Applications currently using RAG-Anything's FastAPI interface
 
-### Technical Stakeholders
-- **RAG-Anything Maintainers**: Core library developers maintaining parsing and processing capabilities
-- **Graphiti Team**: Knowledge graph platform developers providing episode-based modeling
+### System Administrators
+- **DevOps Teams**: Responsible for deployment, scaling, and maintenance of RAG systems
+- **Backend Engineers**: Managing graph database infrastructure and API services
 
 ## Functional Requirements
 
-### FR-001: Backend Abstraction Layer
-**Description**: Create a unified interface that supports both LightRAG and Graphiti backends while maintaining compatibility with existing RAG-Anything functionality.
-
-**Priority**: High
-
+### FR-001: Direct Graphiti-Core Integration
+**Description**: Replace REST API calls to Graphiti server with direct library integration of graphiti-core  
+**Priority**: High  
 **Acceptance Criteria**:
-- [ ] Abstract backend interface defines common methods for document insertion, querying, and retrieval
-- [ ] Existing LightRAG integration continues to work without breaking changes
-- [ ] New Graphiti backend implements the same interface contract
-- [ ] Backend selection is configurable via environment variables or initialization parameters
-- [ ] All existing RAG-Anything APIs maintain backward compatibility
+- [ ] RAG-Anything imports and uses graphiti-core directly as a Python library
+- [ ] No REST API calls to external Graphiti server required
+- [ ] Integration supports all existing multimodal content types (text, images, tables, equations)
+- [ ] Maintains backward compatibility with existing RAG-Anything API interfaces
 
-### FR-002: Multimodal Content to Episode Conversion
-**Description**: Transform parsed multimodal content (text, images, tables, equations) into Graphiti episodes with appropriate metadata and temporal information.
-
-**Priority**: High
-
+### FR-002: Source-Based Graphiti Installation
+**Description**: Build and install graphiti-core from source in ../graphiti directory  
+**Priority**: High  
 **Acceptance Criteria**:
-- [ ] Text content is converted to episodes with source document metadata
-- [ ] Image content generates episodes with vision model descriptions and spatial context
-- [ ] Table content creates episodes with structured data relationships
-- [ ] Equation content produces episodes with mathematical relationship descriptions
-- [ ] All episodes include proper temporal references and source attribution
-- [ ] Episode content preserves original formatting and context when possible
+- [ ] Setup scripts automatically build graphiti-core from ../graphiti source
+- [ ] Installation includes all required dependencies (Neo4j/FalkorDB drivers, embedders, LLM clients)
+- [ ] Version management ensures compatibility between RAG-Anything and graphiti-core
+- [ ] Development mode supports live reloading of graphiti-core changes
 
-### FR-003: Graphiti Knowledge Graph Construction
-**Description**: Leverage Graphiti's entity extraction and relationship modeling to build dynamic knowledge graphs from multimodal document content.
-
-**Priority**: High
-
+### FR-003: Multimodal Content Processing Pipeline
+**Description**: Seamless processing of multimodal documents through RAG-Anything's parsers to Graphiti episodes  
+**Priority**: High  
 **Acceptance Criteria**:
-- [ ] Entity extraction identifies people, organizations, concepts, and domain-specific entities from multimodal content
-- [ ] Relationship extraction captures semantic connections between entities across different content types
-- [ ] Temporal modeling tracks entity evolution and relationship changes over time
-- [ ] Community detection groups related entities and concepts automatically
-- [ ] Graph construction preserves document structure and multimodal context
+- [ ] MinerU parser output converts to Graphiti-compatible episodes
+- [ ] Docling parser output converts to Graphiti-compatible episodes
+- [ ] Image content processed with vision models and stored as episodes
+- [ ] Table data extracted and converted to structured episodes
+- [ ] Mathematical equations processed and stored with semantic context
+- [ ] Document hierarchy preserved in episode relationships
 
-### FR-004: Enhanced Query Capabilities
-**Description**: Provide advanced querying capabilities that leverage both multimodal content understanding and knowledge graph relationships.
-
-**Priority**: Medium
-
+### FR-004: REST Service Implementation
+**Description**: RAG-Anything exposes its own REST service wrapping the graphiti-core integration  
+**Priority**: High  
 **Acceptance Criteria**:
-- [ ] Hybrid search combines vector similarity with graph relationships
-- [ ] Temporal queries enable time-based filtering and trend analysis
-- [ ] Cross-modal queries allow searching across text, images, tables, and equations
-- [ ] Entity-centric queries retrieve all related content for specific entities
-- [ ] Community-based queries explore clustered knowledge domains
+- [ ] FastAPI service provides document upload and processing endpoints
+- [ ] Query endpoints support both text and multimodal queries
+- [ ] RESTful interfaces for episode management (create, read, update, delete)
+- [ ] Batch processing endpoints for multiple documents
+- [ ] WebSocket support for real-time processing status updates
 
-### FR-005: Document Processing Pipeline Integration
-**Description**: Seamlessly integrate with existing RAG-Anything parsing pipeline while adding Graphiti-specific processing steps.
-
-**Priority**: High
-
+### FR-005: Knowledge Graph Construction
+**Description**: Convert multimodal content into episodic knowledge graph structure  
+**Priority**: High  
 **Acceptance Criteria**:
-- [ ] MinerU and Docling parsers continue to work without modification
-- [ ] Parsed content flows through modal processors unchanged
-- [ ] Additional processing stage converts processed content to episodes
-- [ ] Batch processing supports both LightRAG and Graphiti backends
-- [ ] Error handling maintains robustness across backend systems
+- [ ] Document content segments become individual episodes
+- [ ] Cross-modal relationships identified and preserved
+- [ ] Entity extraction from text, image descriptions, table content, and equations
+- [ ] Community detection across multimodal content
+- [ ] Temporal relationships based on document structure and content flow
 
-### FR-006: API Compatibility and Extension
-**Description**: Maintain existing REST API endpoints while adding Graphiti-specific functionality.
-
-**Priority**: Medium
-
+### FR-006: Hybrid Query Capabilities
+**Description**: Support both traditional RAG queries and graph-based episodic queries  
+**Priority**: Medium  
 **Acceptance Criteria**:
-- [ ] All existing FastAPI endpoints continue to function with LightRAG backend
-- [ ] New endpoints expose Graphiti-specific features (community detection, temporal queries)
-- [ ] Backend selection parameter available in relevant API calls
-- [ ] Response formats maintain consistency between backends where possible
-- [ ] Graphiti-specific metadata included in appropriate responses
+- [ ] Text-based semantic search across episodes
+- [ ] Graph traversal queries for relationship exploration
+- [ ] Hybrid queries combining vector similarity and graph structure
+- [ ] Multimodal query support (text + images, text + tables)
+- [ ] Temporal query capabilities for document timeline analysis
+
+### FR-007: Migration from LightRAG
+**Description**: Smooth transition path from existing LightRAG-based implementations  
+**Priority**: Medium  
+**Acceptance Criteria**:
+- [ ] Data migration utilities from LightRAG to Graphiti format
+- [ ] API compatibility layer for existing LightRAG queries
+- [ ] Configuration migration for existing deployments
+- [ ] Performance comparison and optimization guidance
+
+### FR-008: Graph Database Support
+**Description**: Support multiple graph database backends through Graphiti drivers  
+**Priority**: Medium  
+**Acceptance Criteria**:
+- [ ] Neo4j integration with automatic schema creation
+- [ ] FalkorDB integration with Redis-based graph storage
+- [ ] Database connection pooling and management
+- [ ] Configurable database selection based on deployment needs
+
+### FR-009: Advanced Content Analysis
+**Description**: Enhanced multimodal content understanding using specialized processors  
+**Priority**: Medium  
+**Acceptance Criteria**:
+- [ ] Vision model integration for detailed image analysis
+- [ ] Table structure analysis and semantic interpretation
+- [ ] Mathematical equation parsing and symbolic reasoning
+- [ ] Cross-reference detection between document elements
+
+### FR-010: Batch and Streaming Processing
+**Description**: Efficient processing of large document collections  
+**Priority**: Low  
+**Acceptance Criteria**:
+- [ ] Batch processing API for multiple documents
+- [ ] Streaming processing for real-time document ingestion
+- [ ] Queue management for background processing
+- [ ] Progress tracking and status reporting
 
 ## Non-Functional Requirements
 
 ### NFR-001: Performance
-**Description**: System performance requirements for multimodal processing and knowledge graph operations.
-
+**Description**: System response time and throughput requirements  
 **Metrics**:
-- Document processing time should not increase by more than 30% when using Graphiti backend
-- Knowledge graph queries should complete within 2 seconds for typical result sets
-- Batch processing should maintain current throughput levels
-- Memory usage should remain within acceptable limits for large document collections
-
-**Performance Benchmarking Requirements**:
-- Establish baseline performance metrics for all critical operations
-- Implement automated performance testing with synthetic and real-world datasets
-- Define performance regression detection thresholds (>15% degradation triggers investigation)
-- Create performance profiling capabilities for bottleneck identification
-- Implement performance monitoring dashboards for production systems
-- Establish load testing protocols for concurrent user scenarios
-- Define scalability testing requirements for different document collection sizes
+- Document processing: < 30 seconds per PDF page
+- Query response time: < 2 seconds for simple queries, < 10 seconds for complex graph queries
+- Concurrent processing: Support 10+ simultaneous document processing jobs
+- Memory usage: < 8GB RAM for typical document processing workloads
 
 ### NFR-002: Scalability
-**Description**: System scalability requirements for production deployment.
-
-**Standards**:
-- Support for concurrent document processing up to current limits
-- Knowledge graph should handle up to 1M entities and 10M relationships efficiently
-- Horizontal scaling capabilities for distributed processing
-- Database connection pooling and resource management
+**Description**: System ability to handle increasing loads  
+**Metrics**:
+- Horizontal scaling: Support multiple worker instances
+- Graph database scaling: Handle graphs with 100k+ entities and 1M+ relationships
+- Document volume: Process 1000+ documents per day
+- Storage growth: Efficient handling of growing knowledge graphs
 
 ### NFR-003: Reliability
-**Description**: System reliability and error handling requirements.
+**Description**: System availability and error handling  
+**Metrics**:
+- Uptime: 99.5% availability for API services
+- Error recovery: Automatic retry for transient failures
+- Data consistency: ACID properties for graph database operations
+- Graceful degradation: Continue operation with reduced functionality during partial failures
 
-**Standards**:
-- 99.9% uptime for API endpoints during normal operations
-- Graceful degradation when backend systems are unavailable
-- Comprehensive error logging and monitoring capabilities
-- Data consistency guarantees across backend transitions
-
-### NFR-004: Maintainability and Testing
-**Description**: Code quality, maintenance, and comprehensive testing requirements.
-
-**Standards**:
-- Clean separation of concerns between parsing, processing, and storage layers
-- **Comprehensive test coverage requirements (>90% code coverage for all new components)**
-- **Unit test coverage >95% for backend abstraction layer**
-- **Integration test coverage >90% for multimodal processing pipeline**
-- **End-to-end test coverage >85% for API endpoints**
-- **Performance test coverage for all critical paths**
-- Clear documentation for backend selection and configuration
-- Standardized logging and monitoring interfaces
-- **Automated test execution in CI/CD pipeline with quality gates**
-- **Test-driven development practices for all new features**
-- **Regression test suite preventing functionality degradation**
-
-**Testing Framework Requirements**:
-- Unit tests for all backend interface implementations
-- Integration tests for document processing pipeline
-- End-to-end API tests for all supported operations
-- Performance regression tests with automated benchmarking
-- Security tests for input validation and authentication
-- Load tests for concurrent processing scenarios
-- Chaos engineering tests for failure scenario validation
-
-### NFR-005: Security
-**Description**: Comprehensive security requirements for document processing and knowledge graph storage.
-
-**Standards**:
+### NFR-004: Security
+**Description**: Data protection and access control  
+**Requirements**:
+- API authentication and authorization
 - Secure handling of sensitive document content
-- Access control for knowledge graph operations
-- Audit logging for document processing and graph modifications
-- Encryption for data in transit and at rest
+- Graph database access control
+- Input validation and sanitization
+- Audit logging for all operations
 
-**Enhanced Security Requirements**:
-- **Input validation and sanitization for all API endpoints**
-  - Validate file types, sizes, and content before processing
-  - Sanitize user inputs to prevent injection attacks
-  - Implement content security policies for uploaded documents
-  - Validate and sanitize query parameters and request bodies
-- **Rate limiting and throttling mechanisms**
-  - Implement per-user rate limiting for API endpoints
-  - Configure burst protection for document upload endpoints
-  - Implement progressive throttling for resource-intensive operations
-  - Define rate limiting policies for different user tiers
-- **Authentication and authorization framework**
-  - Support multiple authentication methods (API keys, OAuth, JWT)
-  - Implement role-based access control (RBAC) for different operations
-  - Define permission levels for document processing and graph access
-  - Implement session management and token validation
-- **Security monitoring and alerting**
-  - Log and monitor security events and potential threats
-  - Implement automated threat detection and response
-  - Generate security reports and compliance documentation
-  - Establish incident response procedures for security breaches
+### NFR-005: Maintainability
+**Description**: Code quality and development efficiency  
+**Requirements**:
+- Comprehensive unit and integration tests (>80% coverage)
+- Clear documentation for all public APIs
+- Modular architecture enabling independent component updates
+- Standardized logging and monitoring interfaces
 
-### NFR-006: API Security and Validation
-**Description**: Comprehensive API security and input validation requirements.
+### NFR-006: Compatibility
+**Description**: Integration with existing systems and tools  
+**Requirements**:
+- Python 3.10+ compatibility
+- Docker containerization support
+- Kubernetes deployment readiness
+- CI/CD pipeline integration
 
-**Standards**:
-- **Request validation middleware for all endpoints**
-- **Content-type validation and restriction**
-- **File upload security with virus scanning integration capabilities**
-- **Query injection prevention for graph database operations**
-- **OWASP Top 10 compliance verification**
-- **Security headers implementation (HSTS, CSP, X-Frame-Options)**
-- **Automated security scanning in CI/CD pipeline**
+## Data Requirements
+
+### Document Processing Pipeline
+- **Input Formats**: PDF, DOCX, PPTX, XLSX, Images (JPG, PNG, etc.), Text files
+- **Content Types**: Text, Images, Tables, Mathematical equations, Charts, Diagrams
+- **Metadata Preservation**: Document hierarchy, page numbers, section relationships
+- **Output Format**: Graphiti episodes with multimodal content references
+
+### Graph Database Schema
+- **Episode Nodes**: Document segments with content, timestamps, and metadata
+- **Entity Nodes**: Extracted concepts, objects, people, places from multimodal content
+- **Relationship Edges**: Connections between entities with context and confidence scores
+- **Community Structures**: Higher-level groupings of related entities and episodes
+
+### API Data Models
+- **Document Upload**: Multipart file upload with metadata
+- **Episode Creation**: Structured episode data with content and relationships
+- **Query Requests**: Text queries with optional filters and parameters
+- **Query Responses**: Results with entities, relationships, and source episodes
+
+## Integration Requirements
+
+### Graphiti-Core Dependencies
+- **Graph Drivers**: Neo4j, FalkorDB support with connection pooling
+- **LLM Clients**: OpenAI, Azure OpenAI, Anthropic, Gemini integration
+- **Embedders**: OpenAI, Azure OpenAI, Voyage AI, Gemini embedding models
+- **Cross-Encoders**: Reranking models for improved search relevance
+
+### RAG-Anything Parser Integration
+- **MinerU Integration**: Seamless conversion from MinerU output to episodes
+- **Docling Integration**: Support for Docling parser with episode conversion
+- **Content Processors**: Image, table, equation processors working with Graphiti episodes
+- **Document Hierarchy**: Preservation of document structure in episode relationships
+
+### Database Configuration
+- **Neo4j Setup**: Automated database creation, indexing, and constraint setup
+- **FalkorDB Setup**: Redis-based graph database configuration
+- **Connection Management**: Pool configuration, retry logic, health checks
+- **Migration Tools**: Data migration utilities and schema evolution support
 
 ## Constraints
 
 ### Technical Constraints
-- Must maintain backward compatibility with existing RAG-Anything installations
-- Graphiti requires graph database backend (Neo4j, FalkorDB, or Neptune)
-- Episode model requires temporal information for all content
-- Vision models required for image content processing
-- LLM models required for entity extraction and relationship identification
+- **Python Version**: Must support Python 3.10+
+- **Memory Requirements**: Maximum 16GB RAM for single document processing
+- **Graph Database**: Must work with both Neo4j and FalkorDB backends
+- **Library Dependencies**: Minimize additional dependencies beyond existing RAG-Anything and Graphiti requirements
+- **API Compatibility**: Maintain existing RAG-Anything API interfaces where possible
 
 ### Business Constraints
-- Development timeline limited by resource availability
-- Must leverage existing Graphiti REST server architecture
-- Cannot break existing user workflows and integrations
-- Performance cannot degrade significantly for current use cases
+- **Development Timeline**: 8-12 weeks for complete integration
+- **Resource Allocation**: Maximum 3 full-time developers
+- **Backward Compatibility**: Existing RAG-Anything users must not experience breaking changes
+- **Documentation**: Complete API documentation and migration guides required
 
-### Regulatory Requirements
-- Comply with data privacy regulations for document processing
-- Maintain audit trails for knowledge graph modifications
-- Support data retention and deletion policies
+### Infrastructure Constraints
+- **Database Requirements**: Must support both local development and production deployment
+- **Container Support**: Docker and Kubernetes deployment required
+- **Network Requirements**: Minimize external API calls for better reliability
+- **Storage Requirements**: Efficient storage of multimodal content and graph data
+
+### Regulatory Constraints
+- **Data Privacy**: GDPR and CCPA compliance for document processing
+- **Content Security**: Secure handling of potentially sensitive document content
+- **Audit Requirements**: Comprehensive logging for compliance and debugging
 
 ## Assumptions
 
-### Technical Assumptions
-- Graphiti backend database will be properly configured and available
-- Users have appropriate LLM and vision model access for processing
-- Document parsing capabilities (MinerU/Docling) will remain stable
-- Existing RAG-Anything configuration patterns will be maintained
+### Development Assumptions
+- Graphiti-core source code in ../graphiti is stable and well-documented
+- RAG-Anything's existing parser infrastructure is mature and reliable
+- Development team has experience with both graph databases and multimodal AI systems
+- Testing infrastructure can support both unit tests and integration tests with actual graph databases
 
-### Business Assumptions
-- Users will benefit from enhanced knowledge graph capabilities
-- Performance trade-offs for advanced features are acceptable
-- Backend selection flexibility is valuable for different use cases
-- Migration from LightRAG to Graphiti will be gradual and optional
+### Deployment Assumptions
+- Target environments have sufficient computational resources for graph database operations
+- Network connectivity allows for LLM API calls (OpenAI, etc.) during processing
+- Storage systems can handle both structured graph data and unstructured multimodal content
+- Production deployments will use managed graph database services or dedicated infrastructure
 
-### Infrastructure Assumptions
-- Graph database infrastructure can be deployed and maintained
-- API endpoints can handle additional backend complexity
-- Storage requirements for knowledge graphs are manageable
-- Network connectivity between components is reliable
+### User Assumptions
+- Users are familiar with existing RAG-Anything APIs and workflows
+- Document processing workloads are primarily batch-oriented with some real-time requirements
+- Users understand the benefits of episodic knowledge graphs over traditional vector-based RAG
+- Migration from existing systems can be planned and executed with appropriate timeline
+
+### Integration Assumptions
+- Graphiti's episode-based approach is suitable for multimodal document content
+- Performance characteristics of direct library integration will be superior to REST API calls
+- Graph database query patterns align well with multimodal document analysis requirements
+- Community detection algorithms in Graphiti will provide value for document understanding
+
+## Success Metrics
+
+### Technical Success Metrics
+- **Processing Speed**: 50% improvement in document processing time compared to REST API approach
+- **Query Performance**: Sub-2 second response time for 95% of queries
+- **Memory Efficiency**: 30% reduction in memory usage compared to separate service approach
+- **Integration Quality**: Zero breaking changes for existing RAG-Anything users
+
+### Business Success Metrics
+- **User Adoption**: 80% of existing RAG-Anything users migrate to Graphiti integration within 6 months
+- **Feature Completeness**: 100% of multimodal content types supported with Graphiti episodes
+- **Documentation Quality**: Complete API documentation and tutorials available at launch
+- **Community Feedback**: Positive feedback from early adopters and beta users
+
+### Operational Success Metrics
+- **Reliability**: 99.5% uptime for integration components
+- **Scalability**: Successfully handle 10x increase in document processing volume
+- **Maintenance**: Automated testing covering 90% of integration functionality
+- **Performance Monitoring**: Real-time monitoring of all critical system components
 
 ## Out of Scope
 
 ### Explicitly Excluded Features
-- Real-time collaborative editing of knowledge graphs
-- Advanced graph visualization interfaces
-- Custom entity type modeling beyond Graphiti's capabilities
-- Integration with external knowledge bases or ontologies
-- Automated knowledge graph validation and correction
-- Multi-language document processing optimization
-- Advanced graph analytics and machine learning features
+- **GraphRAG Integration**: Not replacing or integrating with Microsoft's GraphRAG (different from Graphiti)
+- **Vector Database Support**: Not maintaining compatibility with traditional vector databases like Pinecone or Weaviate
+- **Real-time Collaborative Editing**: Not building document collaboration features
+- **Advanced NLP Pipelines**: Not implementing custom NLP models beyond what Graphiti provides
+- **Data Visualization**: Not building graph visualization or document analysis dashboards
+- **Multi-tenant Architecture**: Not implementing user separation or tenant isolation
+- **Blockchain Integration**: Not implementing distributed ledger features
+- **Mobile SDK**: Not building mobile application interfaces
 
-### Future Considerations
-- Advanced graph traversal and path finding algorithms
-- Integration with external knowledge validation systems
-- Automated entity resolution across document collections
-- Advanced community detection algorithm customization
-- Real-time graph updates and streaming processing
-
-## Success Criteria
-
-### Functional Success Metrics
-- All existing RAG-Anything functionality works with new backend abstraction
-- Graphiti backend successfully processes multimodal documents into knowledge graphs
-- Entity extraction accuracy matches or exceeds baseline LightRAG performance
-- Relationship extraction captures meaningful connections between multimodal content
-- Temporal modeling provides useful insights into document evolution
-
-### Technical Success Metrics
-- Backend abstraction layer passes comprehensive test suite with >90% coverage
-- Performance benchmarks meet established thresholds with <30% degradation
-- Integration tests validate end-to-end functionality across all components
-- Documentation completeness enables successful deployment
-- Error handling covers edge cases and failure scenarios
-- **Security audit passes with zero critical vulnerabilities**
-- **Automated testing achieves >90% code coverage across all components**
-
-### User Experience Success Metrics
-- Existing users can continue using RAG-Anything without disruption
-- New users can successfully configure and use Graphiti backend
-- API responses remain consistent and predictable
-- Knowledge graph queries provide meaningful and accurate results
-- System monitoring and troubleshooting capabilities are effective
-
-## Dependencies
-
-### External Dependencies
-- Graphiti core library and REST server
-- Graph database backend (Neo4j recommended)
-- LLM services for entity extraction and relationship modeling
-- Vision model services for image content processing
-- Embedding services for vector similarity operations
-
-### Internal Dependencies
-- RAG-Anything core parsing and processing pipeline
-- Modal processors for different content types
-- FastAPI integration layer
-- Configuration management system
-- Storage and caching infrastructure
-
-## Risk Assessment
-
-| Risk | Impact | Probability | Mitigation Strategy |
-|------|--------|-------------|-------------------|
-| Graphiti API changes | High | Medium | Pin to stable versions, maintain compatibility layers |
-| Performance degradation | Medium | Medium | Comprehensive benchmarking, optimization focus |
-| Complex backend abstraction | Medium | High | Iterative development, extensive testing |
-| Knowledge graph quality issues | High | Medium | Validation frameworks, human review processes |
-| Integration complexity | Medium | High | Modular design, phased implementation |
-| User adoption challenges | Low | Medium | Clear migration paths, documentation |
-| Security vulnerabilities | High | Medium | Security audits, automated scanning, secure coding practices |
-| Test coverage insufficient | Medium | Medium | Automated coverage reporting, quality gates |
-
-## Migration Strategy
-
-### Phase 1: Foundation (Weeks 1-4)
-- Implement backend abstraction interface
-- Create basic Graphiti backend implementation
-- Ensure LightRAG compatibility is maintained
-- Establish testing framework and initial test suite
-
-### Phase 2: Core Integration (Weeks 5-8)
-- Implement multimodal content to episode conversion
-- Integrate with Graphiti knowledge graph construction
-- Develop comprehensive test suite with >90% coverage
-- Implement security framework and input validation
-
-### Phase 3: API Integration (Weeks 9-12)
-- Extend FastAPI endpoints for backend selection
-- Add Graphiti-specific functionality
-- Implement monitoring and logging
-- Performance optimization and benchmarking
-
-### Phase 4: Validation and Documentation (Weeks 13-16)
-- Performance testing and optimization
-- Security audit and penetration testing
-- User documentation and migration guides
-- Production deployment preparation
-
-This requirements document provides the foundation for implementing a robust RAG-Anything + Graphiti integration that maintains backward compatibility while enabling advanced knowledge graph capabilities with comprehensive testing, security, and performance requirements.
+### Future Considerations (Not in Current Scope)
+- Advanced workflow orchestration for document processing pipelines
+- Integration with enterprise document management systems
+- Custom entity type training and fine-tuning capabilities
+- Advanced analytics and reporting on knowledge graph metrics
+- Integration with business intelligence and data warehouse systems

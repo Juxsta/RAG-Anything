@@ -63,12 +63,50 @@ extras_require = {
     "image": ["Pillow>=10.0.0"],  # For image format conversion (BMP, TIFF, GIF, WebP)
     "text": ["reportlab>=4.0.0"],  # For text file to PDF conversion (TXT, MD)
     "office": [],  # Office document processing requires LibreOffice (external program)
-    "all": ["Pillow>=10.0.0", "reportlab>=4.0.0"],  # All optional features
     "markdown": [
         "markdown>=3.4.0",
         "weasyprint>=60.0",
         "pygments>=2.10.0",
     ],  # Enhanced markdown conversion
+    "graphiti": [
+        "graphiti-core>=0.19.0",
+        "falkordb>=1.1.2,<2.0.0",
+        "neo4j>=5.26.0",
+        "pydantic>=2.11.5",
+        "tenacity>=9.0.0",
+        "diskcache>=5.6.3",
+        "posthog>=3.0.0",
+        "python-dotenv>=1.0.1",
+    ],  # Graphiti integration with all required dependencies
+    "graphiti-dev": [
+        "graphiti-core>=0.19.0", 
+        "falkordb>=1.1.2,<2.0.0",
+        "neo4j>=5.26.0",
+        "anthropic>=0.49.0",
+        "groq>=0.2.0",
+        "google-genai>=1.8.0",
+        "voyageai>=0.2.3",
+        "sentence-transformers>=3.2.1",
+    ],  # Graphiti with additional model providers
+    "api": [
+        "fastapi>=0.104.0",
+        "uvicorn[standard]>=0.24.0",
+        "python-multipart>=0.0.6",
+        "pydantic>=2.5.0",
+    ],  # FastAPI REST service
+    "all": [
+        "Pillow>=10.0.0", 
+        "reportlab>=4.0.0",
+        "markdown>=3.4.0",
+        "weasyprint>=60.0",
+        "pygments>=2.10.0",
+        "graphiti-core>=0.19.0",
+        "falkordb>=1.1.2,<2.0.0",
+        "neo4j>=5.26.0",
+        "fastapi>=0.104.0",
+        "uvicorn[standard]>=0.24.0",
+        "python-multipart>=0.0.6",
+    ],  # All optional features including Graphiti and API
 }
 
 setuptools.setup(

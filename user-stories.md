@@ -1,442 +1,484 @@
-# RAG-Anything + Graphiti Integration - User Stories
+# User Stories: RAG-Anything + Graphiti-Core Integration
 
-## Epic: Backend Abstraction and Compatibility
+## Epic 1: Direct Library Integration
 
-### Story: BA-001 - Backend Interface Definition
+### Story: INT-001 - Replace REST API with Direct Library Calls
 **As a** developer using RAG-Anything  
-**I want** a unified backend interface that abstracts storage operations  
-**So that** I can switch between LightRAG and Graphiti without changing my application code
+**I want** to integrate with Graphiti-core directly as a Python library  
+**So that** I can eliminate network latency, reduce complexity, and improve system reliability
 
 **Acceptance Criteria** (EARS format):
-- **WHEN** I initialize RAG-Anything with a backend parameter **THEN** the system should use the specified backend
-- **IF** no backend is specified **THEN** the system should default to LightRAG for backward compatibility
-- **FOR** all storage operations (insert, query, retrieve) **VERIFY** the interface contract is identical across backends
-- **WHEN** I call any existing RAG-Anything method **THEN** it should work regardless of backend choice
-- **FOR** configuration parameters **VERIFY** backend-specific options are properly isolated
+- **WHEN** I initialize RAG-Anything **THEN** it imports graphiti-core as a Python library
+- **IF** a network connection to Graphiti server is unavailable **THEN** the system continues to function normally
+- **FOR** all multimodal content processing **VERIFY** no REST API calls are made to external Graphiti servers
+- **WHEN** I process documents **THEN** graphiti-core functions are called directly in-process
 
 **Technical Notes**:
-- Abstract base class should define: insert_document(), query(), retrieve(), get_stats()
-- LightRAGBackend and GraphitiBackend implement the interface
-- Configuration management for backend-specific parameters
-- Error handling should be consistent across backends
+- Replace `requests` calls with direct `graphiti_core.Graphiti` instantiation
+- Maintain existing error handling patterns but adapt for library exceptions
+- Dependencies: Direct import of graphiti-core from source build
 
 **Story Points**: 8  
 **Priority**: High
 
-### Story: BA-002 - LightRAG Backend Wrapper
-**As a** existing RAG-Anything user  
-**I want** my current LightRAG-based workflows to continue working  
-**So that** I don't need to modify existing code when upgrading
+### Story: INT-002 - Source-Based Installation and Build System
+**As a** system administrator or developer  
+**I want** to automatically build and install graphiti-core from the ../graphiti source directory  
+**So that** I can ensure version compatibility and enable development against the latest Graphiti features
 
-**Acceptance Criteria** (EARS format):
-- **WHEN** I use RAG-Anything with LightRAG backend **THEN** all existing functionality should work unchanged
-- **FOR** all current API methods **VERIFY** they produce identical results to previous versions
-- **WHEN** I process documents with modal processors **THEN** the pipeline should work exactly as before
-- **IF** I use batch processing **THEN** performance should be equivalent to current implementation
-- **FOR** configuration parameters **VERIFY** all existing options are supported
+**Acceptance Criteria**:
+- **WHEN** I run the RAG-Anything setup process **THEN** it automatically detects the ../graphiti directory
+- **IF** ../graphiti contains valid source code **THEN** setup builds and installs it as a dependency
+- **FOR** all graphiti-core dependencies (Neo4j drivers, LLM clients, embedders) **VERIFY** they are properly installed
+- **WHEN** graphiti source is updated **THEN** development mode enables live reloading of changes
 
 **Technical Notes**:
-- Wrap existing LightRAG integration in new interface
-- Maintain all current performance characteristics
-- Preserve error handling behavior
-- Support all existing configuration options
+- Modify setup.py to include local graphiti build process
+- Add development mode flag for editable installs
+- Implement version compatibility checking
 
-**Story Points**: 5  
+**Story Points**: 13  
 **Priority**: High
 
-### Story: BA-003 - Backend Selection Configuration
-**As a** system administrator  
-**I want** flexible configuration options for backend selection  
-**So that** I can deploy RAG-Anything with the appropriate backend for my use case
+---
 
-**Acceptance Criteria** (EARS format):
-- **WHEN** I set RAGANYTHING_BACKEND environment variable **THEN** the system should use that backend
-- **IF** I provide backend parameter in initialization **THEN** it should override environment settings
-- **FOR** configuration files **VERIFY** backend selection is properly documented and validated
-- **WHEN** an invalid backend is specified **THEN** the system should fail with a clear error message
-- **FOR** backend-specific configuration **VERIFY** validation occurs at initialization time
+## Epic 2: Multimodal Content Processing
+
+### Story: PROC-001 - Document Parsing to Episode Conversion
+**As a** data scientist processing multimodal documents  
+**I want** RAG-Anything's parsed content to be automatically converted to Graphiti episodes  
+**So that** I can build knowledge graphs from text, images, tables, and equations seamlessly
+
+**Acceptance Criteria**:
+- **WHEN** MinerU parses a document **THEN** each content segment becomes a separate episode
+- **WHEN** Docling processes office documents **THEN** structured content maps to episodes with metadata
+- **FOR** each episode created **VERIFY** it contains proper temporal references and source attribution
+- **WHEN** document hierarchy exists **THEN** episode relationships preserve the original structure
 
 **Technical Notes**:
-- Environment variable: RAGANYTHING_BACKEND=(lightrag|graphiti)
-- Configuration validation at startup
-- Clear error messages for misconfiguration
-- Documentation for deployment scenarios
+- Create episode conversion factory for different parser outputs
+- Map content types to episode metadata schemas
+- Preserve page numbers, section headers, and spatial relationships
 
-**Story Points**: 3  
+**Story Points**: 21  
+**Priority**: High
+
+### Story: PROC-002 - Image Content Episode Processing
+**As a** researcher analyzing documents with visual content  
+**I want** images to be processed with vision models and stored as meaningful episodes  
+**So that** I can query and understand visual information alongside text
+
+**Acceptance Criteria**:
+- **WHEN** an image is encountered during parsing **THEN** vision model generates detailed description
+- **WHEN** image episodes are created **THEN** they include spatial context and relationships to surrounding content
+- **FOR** all image descriptions **VERIFY** they capture key visual elements and semantic meaning
+- **WHEN** I query for visual content **THEN** relevant image episodes are returned with context
+
+**Technical Notes**:
+- Integration with existing VLM processors
+- Episode schema for image content with vision model outputs
+- Cross-reference detection between images and text
+
+**Story Points**: 13  
+**Priority**: High
+
+### Story: PROC-003 - Table and Equation Episode Processing
+**As a** analyst working with structured data and mathematical content  
+**I want** tables and equations to become semantically rich episodes  
+**So that** I can understand relationships within tabular data and mathematical concepts
+
+**Acceptance Criteria**:
+- **WHEN** a table is parsed **THEN** it creates episodes capturing structure, relationships, and data patterns
+- **WHEN** equations are encountered **THEN** episodes include both symbolic representation and semantic meaning
+- **FOR** table data **VERIFY** column relationships and statistical patterns are identified
+- **FOR** mathematical equations **VERIFY** symbolic reasoning and contextual relevance are captured
+
+**Technical Notes**:
+- Enhanced table structure analysis beyond basic parsing
+- Mathematical equation symbolic processing
+- Cross-modal relationship detection
+
+**Story Points**: 21  
 **Priority**: Medium
 
-## Epic: Multimodal Content Processing
+---
 
-### Story: MC-001 - Episode Creation from Text Content
-**As a** knowledge worker  
-**I want** text content from documents to be converted into Graphiti episodes  
-**So that** I can build knowledge graphs from textual information
+## Epic 3: Knowledge Graph Construction
 
-**Acceptance Criteria** (EARS format):
-- **WHEN** I process a document with text content **THEN** each text chunk should become a Graphiti episode
-- **FOR** each episode **VERIFY** it includes document metadata, timestamp, and source information
-- **WHEN** text contains structured elements (headers, lists) **THEN** episode should preserve hierarchical context
-- **IF** document has multiple sections **THEN** episodes should maintain document structure relationships
-- **FOR** episode content **VERIFY** original formatting and context are preserved where possible
+### Story: GRAPH-001 - Entity Extraction Across Content Types
+**As a** knowledge worker building comprehensive understanding from documents  
+**I want** entities to be extracted from all content types (text, images, tables, equations)  
+**So that** I can discover connections and patterns across multimodal information
+
+**Acceptance Criteria**:
+- **WHEN** text content is processed **THEN** entities (people, organizations, concepts) are extracted accurately
+- **WHEN** image descriptions are analyzed **THEN** visual entities and objects are identified
+- **WHEN** table content is examined **THEN** data entities and categorical information are extracted
+- **FOR** all extracted entities **VERIFY** they include confidence scores and source attribution
 
 **Technical Notes**:
-- Episode name should include document title and section information
-- Source description should identify document type and parser used
-- Reference time should be document creation/modification time
-- Group ID should organize episodes by document or collection
+- Leverage Graphiti's existing entity extraction for text
+- Extend entity extraction to vision model outputs
+- Custom entity types for mathematical and tabular content
 
-**Story Points**: 5  
+**Story Points**: 13  
 **Priority**: High
 
-### Story: MC-002 - Episode Creation from Image Content
-**As a** researcher processing documents with images  
-**I want** image content to be converted into episodes with vision model descriptions  
-**So that** visual information becomes part of my knowledge graph
+### Story: GRAPH-002 - Cross-Modal Relationship Detection
+**As a** researcher analyzing complex documents  
+**I want** relationships to be identified between entities across different content modalities  
+**So that** I can understand how visual, textual, and structured information connects
 
-**Acceptance Criteria** (EARS format):
-- **WHEN** I process a document with images **THEN** each image should generate a descriptive episode
-- **FOR** image episodes **VERIFY** they include vision model analysis and spatial context
-- **WHEN** images have captions or alt text **THEN** episodes should incorporate existing descriptions
-- **IF** images contain diagrams or charts **THEN** episodes should capture structural information
-- **FOR** image relationships **VERIFY** connections to surrounding text content are maintained
+**Acceptance Criteria**:
+- **WHEN** entities exist in multiple content types **THEN** cross-modal relationships are identified
+- **WHEN** a figure references text content **THEN** explicit relationships link visual and textual entities
+- **FOR** all relationships **VERIFY** they include relationship type, confidence, and contextual evidence
+- **WHEN** temporal sequences exist **THEN** relationships capture document flow and narrative structure
 
 **Technical Notes**:
-- Use vision model for image description generation
-- Include image metadata (size, format, position in document)
-- Link to related text content through spatial proximity
-- Handle different image types (photos, diagrams, charts)
+- Cross-reference detection algorithms
+- Spatial and semantic relationship mapping
+- Integration with Graphiti's relationship extraction framework
 
-**Story Points**: 8  
+**Story Points**: 21  
 **Priority**: High
 
-### Story: MC-003 - Episode Creation from Table Content
-**As a** analyst processing documents with tabular data  
-**I want** table content to be converted into structured episodes  
-**So that** tabular relationships become part of my knowledge graph
+### Story: GRAPH-003 - Community Detection Across Multimodal Content
+**As a** analyst exploring large document collections  
+**I want** communities to be automatically detected across all content types  
+**So that** I can understand thematic clusters and knowledge domains
 
-**Acceptance Criteria** (EARS format):
-- **WHEN** I process a document with tables **THEN** each table should generate structured episodes
-- **FOR** table episodes **VERIFY** they preserve column headers, data types, and relationships
-- **WHEN** tables have nested or merged cells **THEN** episodes should maintain hierarchical structure
-- **IF** tables contain numerical data **THEN** episodes should capture statistical relationships
-- **FOR** table context **VERIFY** connections to explanatory text are preserved
-
-**Technical Notes**:
-- Convert tables to structured data representations
-- Preserve column/row relationships in episode content
-- Include table metadata (size, data types, formatting)
-- Link to related explanatory text content
-
-**Story Points**: 6  
-**Priority**: High
-
-### Story: MC-004 - Episode Creation from Mathematical Content
-**As a** researcher processing scientific documents  
-**I want** mathematical equations and formulas to be converted into episodes  
-**So that** mathematical relationships become part of my knowledge graph
-
-**Acceptance Criteria** (EARS format):
-- **WHEN** I process documents with mathematical content **THEN** equations should generate descriptive episodes
-- **FOR** equation episodes **VERIFY** they include mathematical notation and semantic meaning
-- **WHEN** equations are complex or multi-line **THEN** episodes should capture complete expressions
-- **IF** equations reference variables or constants **THEN** episodes should identify mathematical entities
-- **FOR** mathematical relationships **VERIFY** connections between related equations are maintained
-
-**Technical Notes**:
-- Use LLM to generate natural language descriptions of equations
-- Preserve LaTeX or MathML notation when available
-- Identify mathematical variables and constants as entities
-- Link equations to explanatory text and figures
-
-**Story Points**: 7  
-**Priority**: Medium
-
-## Epic: Knowledge Graph Construction
-
-### Story: KG-001 - Entity Extraction from Multimodal Content
-**As a** knowledge engineer  
-**I want** entities to be extracted from all types of content (text, images, tables, equations)  
-**So that** my knowledge graph captures comprehensive entity information
-
-**Acceptance Criteria** (EARS format):
-- **WHEN** I process multimodal documents **THEN** entities should be identified across all content types
-- **FOR** text content **VERIFY** standard NER entities are extracted (people, organizations, locations)
-- **WHEN** processing images **THEN** visual entities should be identified from image descriptions
-- **IF** tables contain entity references **THEN** tabular entities should be extracted and typed
-- **FOR** mathematical content **VERIFY** variables, constants, and mathematical concepts are identified as entities
-
-**Technical Notes**:
-- Leverage Graphiti's entity extraction capabilities
-- Define multimodal entity types for different content types
-- Handle entity disambiguation across content modalities
-- Maintain entity confidence scores and provenance
-
-**Story Points**: 8  
-**Priority**: High
-
-### Story: KG-002 - Relationship Extraction Across Content Types
-**As a** analyst building knowledge graphs  
-**I want** relationships to be extracted between entities across different content types  
-**So that** my knowledge graph captures cross-modal connections
-
-**Acceptance Criteria** (EARS format):
-- **WHEN** I process documents with mixed content **THEN** relationships should be identified across modalities
-- **FOR** text-image relationships **VERIFY** references between textual entities and visual content are captured
-- **WHEN** tables reference textual entities **THEN** data relationships should be extracted
-- **IF** equations involve entities mentioned in text **THEN** mathematical relationships should be captured
-- **FOR** relationship confidence **VERIFY** cross-modal relationships include appropriate confidence scores
-
-**Technical Notes**:
-- Implement cross-modal relationship detection algorithms
-- Use spatial proximity and semantic similarity for relationship inference
-- Handle different relationship types (spatial, temporal, semantic)
-- Maintain relationship provenance and confidence metrics
-
-**Story Points**: 10  
-**Priority**: High
-
-### Story: KG-003 - Temporal Modeling of Document Evolution
-**As a** researcher tracking knowledge evolution  
-**I want** temporal information to be captured for all entities and relationships  
-**So that** I can analyze how knowledge changes over time
-
-**Acceptance Criteria** (EARS format):
-- **WHEN** I process documents with timestamps **THEN** all entities should include temporal validity
-- **FOR** entity evolution **VERIFY** changes to entity attributes are tracked over time
-- **WHEN** relationships change between documents **THEN** temporal relationship updates are captured
-- **IF** documents are updated or revised **THEN** version history should be maintained
-- **FOR** temporal queries **VERIFY** time-based filtering and analysis are supported
-
-**Technical Notes**:
-- Use Graphiti's temporal modeling capabilities
-- Track entity and relationship lifecycle events
-- Support temporal validity periods for knowledge facts
-- Enable time-based querying and analysis
-
-**Story Points**: 9  
-**Priority**: Medium
-
-### Story: KG-004 - Community Detection for Knowledge Domains
-**As a** knowledge manager  
-**I want** related entities and concepts to be automatically grouped into communities  
-**So that** I can discover knowledge domains and clusters
-
-**Acceptance Criteria** (EARS format):
-- **WHEN** I build knowledge graphs from document collections **THEN** communities should be automatically detected
-- **FOR** community formation **VERIFY** multimodal evidence contributes to clustering decisions
-- **WHEN** new documents are processed **THEN** community membership should be updated appropriately
-- **IF** communities evolve over time **THEN** temporal community dynamics should be tracked
-- **FOR** community quality **VERIFY** detected communities represent coherent knowledge domains
+**Acceptance Criteria**:
+- **WHEN** sufficient entities and relationships exist **THEN** community detection identifies coherent clusters
+- **WHEN** communities include multimodal content **THEN** they capture thematic coherence across content types
+- **FOR** each detected community **VERIFY** it includes representative entities and clear boundaries
+- **WHEN** I query communities **THEN** results provide meaningful insights into knowledge domains
 
 **Technical Notes**:
 - Leverage Graphiti's community detection algorithms
-- Include multimodal similarity measures in community formation
-- Support dynamic community updates as new content is added
-- Provide community quality metrics and validation
+- Weight multimodal relationships appropriately
+- Community visualization and exploration capabilities
 
-**Story Points**: 7  
+**Story Points**: 13  
+**Priority**: Medium
+
+---
+
+## Epic 4: REST Service Implementation
+
+### Story: API-001 - Document Upload and Processing Endpoints
+**As a** application developer integrating with RAG-Anything  
+**I want** robust REST APIs for document upload and processing  
+**So that** I can build applications that leverage multimodal document understanding
+
+**Acceptance Criteria**:
+- **WHEN** I upload a document via REST API **THEN** it is processed through the complete multimodal pipeline
+- **WHEN** processing begins **THEN** I receive immediate confirmation with a job identifier
+- **FOR** long-running processing jobs **VERIFY** status updates are available via polling or webhooks
+- **WHEN** processing completes **THEN** I receive comprehensive results including entities and relationships
+
+**Technical Notes**:
+- FastAPI implementation with async processing
+- File upload handling with size and type validation
+- Job queue management for background processing
+
+**Story Points**: 13  
+**Priority**: High
+
+### Story: API-002 - Advanced Query Endpoints
+**As a** developer building intelligent applications  
+**I want** powerful query APIs that leverage both semantic search and graph relationships  
+**So that** I can provide sophisticated information retrieval capabilities
+
+**Acceptance Criteria**:
+- **WHEN** I submit a text query **THEN** results combine vector similarity and graph traversal
+- **WHEN** I specify entity-centric queries **THEN** related content across all modalities is returned
+- **FOR** all query responses **VERIFY** they include source attribution and confidence scores
+- **WHEN** I request temporal queries **THEN** results reflect time-based filtering and trends
+
+**Technical Notes**:
+- Hybrid query engine combining Graphiti's search capabilities
+- Response format standardization
+- Query optimization for multimodal content
+
+**Story Points**: 21  
+**Priority**: Medium
+
+### Story: API-003 - Real-time Processing Status Updates
+**As a** user processing large document collections  
+**I want** real-time updates on processing progress  
+**So that** I can monitor system status and plan accordingly
+
+**Acceptance Criteria**:
+- **WHEN** document processing begins **THEN** WebSocket connection provides real-time updates
+- **WHEN** processing stages complete **THEN** specific progress messages are sent
+- **FOR** error conditions **VERIFY** detailed error information is provided immediately
+- **WHEN** processing completes **THEN** final status and result summary are delivered
+
+**Technical Notes**:
+- WebSocket implementation for real-time communication
+- Progress tracking throughout multimodal pipeline
+- Error handling and status reporting
+
+**Story Points**: 8  
 **Priority**: Low
 
-## Epic: Enhanced Query and Retrieval
+---
 
-### Story: QR-001 - Hybrid Search with Graph Context
-**As a** user querying processed documents  
-**I want** search results that combine vector similarity with graph relationships  
-**So that** I get more comprehensive and contextually relevant answers
+## Epic 5: Migration and Compatibility
 
-**Acceptance Criteria** (EARS format):
-- **WHEN** I perform a query **THEN** results should include both similar content and related graph entities
-- **FOR** search results **VERIFY** both vector similarity scores and graph relationship strengths are provided
-- **WHEN** querying about specific entities **THEN** all related multimodal content should be retrievable
-- **IF** query involves temporal aspects **THEN** time-based filtering should be supported
-- **FOR** result ranking **VERIFY** hybrid scoring combines multiple relevance signals appropriately
+### Story: MIG-001 - LightRAG to Graphiti Data Migration
+**As a** existing RAG-Anything user with LightRAG data  
+**I want** automated migration tools to convert my existing knowledge base to Graphiti format  
+**So that** I can upgrade to the new system without losing valuable data
+
+**Acceptance Criteria**:
+- **WHEN** I run the migration utility **THEN** existing LightRAG data is converted to Graphiti episodes
+- **WHEN** migration runs **THEN** entity and relationship mappings are preserved where possible
+- **FOR** all migrated data **VERIFY** integrity checks confirm successful conversion
+- **WHEN** migration completes **THEN** performance comparison reports help validate the upgrade
 
 **Technical Notes**:
-- Implement hybrid search combining vector and graph databases
-- Support entity-centric query expansion
-- Include temporal filtering capabilities
-- Provide relevance scoring that combines multiple factors
+- Data format conversion utilities
+- Schema mapping between LightRAG and Graphiti
+- Validation and integrity checking tools
 
-**Story Points**: 9  
+**Story Points**: 21  
 **Priority**: Medium
 
-### Story: QR-002 - Cross-Modal Content Retrieval
-**As a** researcher exploring multimodal documents  
-**I want** to find content across different modalities based on semantic similarity  
-**So that** I can discover related information regardless of content type
+### Story: MIG-002 - API Backward Compatibility
+**As a** developer with existing RAG-Anything integrations  
+**I want** existing APIs to continue working with the Graphiti integration  
+**So that** I don't need to modify my applications during the upgrade
 
-**Acceptance Criteria** (EARS format):
-- **WHEN** I search for concepts **THEN** results should include relevant text, images, tables, and equations
-- **FOR** cross-modal results **VERIFY** semantic relationships are properly identified and ranked
-- **WHEN** searching with image queries **THEN** related textual and tabular content should be found
-- **IF** query involves mathematical concepts **THEN** related equations and explanatory text should be retrieved
-- **FOR** multimodal results **VERIFY** different content types are clearly identified and contextualized
+**Acceptance Criteria**:
+- **WHEN** I call existing RAG-Anything APIs **THEN** they function identically with Graphiti backend
+- **WHEN** response formats differ **THEN** compatibility layer normalizes outputs
+- **FOR** all existing endpoints **VERIFY** no breaking changes in request/response contracts
+- **WHEN** new Graphiti features are available **THEN** optional parameters provide access without breaking compatibility
 
 **Technical Notes**:
-- Implement cross-modal embedding and similarity search
-- Support query expansion across different content types
-- Provide clear content type identification in results
-- Maintain semantic coherence across modalities
+- API compatibility layer implementation
+- Response format normalization
+- Gradual feature migration strategy
 
-**Story Points**: 11  
+**Story Points**: 13  
+**Priority**: High
+
+---
+
+## Epic 6: Performance and Scalability
+
+### Story: PERF-001 - Processing Performance Optimization
+**As a** system operator handling large document volumes  
+**I want** document processing to be optimized for the Graphiti integration  
+**So that** I can maintain or improve current throughput levels
+
+**Acceptance Criteria**:
+- **WHEN** processing documents with Graphiti **THEN** performance is within 30% of LightRAG baseline
+- **WHEN** concurrent processing occurs **THEN** system handles multiple documents efficiently
+- **FOR** memory usage **VERIFY** it remains within acceptable limits for large document collections
+- **WHEN** bottlenecks are identified **THEN** performance monitoring provides actionable insights
+
+**Technical Notes**:
+- Performance profiling and optimization
+- Memory usage monitoring and optimization
+- Concurrent processing improvements
+
+**Story Points**: 21  
 **Priority**: Medium
 
-### Story: QR-003 - Entity-Centric Information Retrieval
-**As a** knowledge worker researching specific topics  
-**I want** to retrieve all information related to specific entities  
-**So that** I can get comprehensive context about entities of interest
+### Story: PERF-002 - Graph Database Scaling
+**As a** enterprise user with growing knowledge bases  
+**I want** the system to handle large knowledge graphs efficiently  
+**So that** performance remains acceptable as my data grows
 
-**Acceptance Criteria** (EARS format):
-- **WHEN** I query for a specific entity **THEN** all related episodes and relationships should be retrieved
-- **FOR** entity queries **VERIFY** multimodal content mentioning the entity is included
-- **WHEN** exploring entity relationships **THEN** connected entities and their content should be accessible
-- **IF** entities have temporal evolution **THEN** historical information should be retrievable
-- **FOR** entity context **VERIFY** surrounding content and relationships provide comprehensive understanding
+**Acceptance Criteria**:
+- **WHEN** knowledge graphs exceed 100k entities **THEN** query performance remains sub-2 seconds
+- **WHEN** relationship counts exceed 1M **THEN** graph operations complete within acceptable timeframes
+- **FOR** database connections **VERIFY** connection pooling and management prevent resource exhaustion
+- **WHEN** multiple users query simultaneously **THEN** system maintains responsiveness
 
 **Technical Notes**:
-- Implement entity-centric query mechanisms
-- Support entity relationship traversal
-- Include temporal entity information
-- Provide comprehensive entity context aggregation
+- Database connection pooling optimization
+- Query optimization for large graphs
+- Horizontal scaling capabilities
+
+**Story Points**: 13  
+**Priority**: Low
+
+---
+
+## Epic 7: Security and Compliance
+
+### Story: SEC-001 - Secure Document Processing
+**As a** enterprise security administrator  
+**I want** comprehensive security controls for document processing  
+**So that** sensitive information is protected throughout the processing pipeline
+
+**Acceptance Criteria**:
+- **WHEN** documents are uploaded **THEN** content is validated and sanitized
+- **WHEN** processing occurs **THEN** sensitive data is handled according to security policies
+- **FOR** all API endpoints **VERIFY** proper authentication and authorization controls are enforced
+- **WHEN** errors occur **THEN** sensitive information is not exposed in logs or error messages
+
+**Technical Notes**:
+- Input validation and sanitization framework
+- Authentication and authorization implementation
+- Secure error handling and logging
+
+**Story Points**: 13  
+**Priority**: Medium
+
+### Story: SEC-002 - Audit Logging and Compliance
+**As a** compliance officer in a regulated industry  
+**I want** comprehensive audit logging for all operations  
+**So that** I can demonstrate compliance with regulatory requirements
+
+**Acceptance Criteria**:
+- **WHEN** documents are processed **THEN** all operations are logged with timestamps and user attribution
+- **WHEN** knowledge graph modifications occur **THEN** changes are tracked with full audit trails
+- **FOR** all logged events **VERIFY** they include sufficient detail for compliance reporting
+- **WHEN** audit reports are generated **THEN** they provide comprehensive activity summaries
+
+**Technical Notes**:
+- Comprehensive audit logging framework
+- Compliance reporting capabilities
+- Data retention and deletion policies
+
+**Story Points**: 8  
+**Priority**: Low
+
+---
+
+## Epic 8: Development and Operations
+
+### Story: DEV-001 - Comprehensive Testing Framework
+**As a** developer working on the integration  
+**I want** comprehensive automated testing across all integration components  
+**So that** I can ensure reliability and prevent regressions
+
+**Acceptance Criteria**:
+- **WHEN** code changes are made **THEN** automated tests verify functionality across all components
+- **WHEN** tests run **THEN** coverage exceeds 90% for all new integration code
+- **FOR** integration tests **VERIFY** they test actual graphiti-core library interactions
+- **WHEN** performance regressions occur **THEN** automated tests detect and report them
+
+**Technical Notes**:
+- Unit tests for all integration components
+- Integration tests with actual graph databases
+- Performance regression testing
+- Automated test execution in CI/CD
+
+**Story Points**: 21  
+**Priority**: High
+
+### Story: DEV-002 - Development Environment Setup
+**As a** developer contributing to the project  
+**I want** streamlined development environment setup  
+**So that** I can quickly start developing and testing changes
+
+**Acceptance Criteria**:
+- **WHEN** I clone the repository **THEN** setup scripts configure complete development environment
+- **WHEN** development environment is running **THEN** it includes both graph database and all dependencies
+- **FOR** code changes **VERIFY** hot reloading works for both RAG-Anything and graphiti-core
+- **WHEN** running tests **THEN** development environment supports full test suite execution
+
+**Technical Notes**:
+- Docker-based development environment
+- Hot reloading configuration
+- Test database setup and teardown
+- Documentation for development setup
+
+**Story Points**: 13  
+**Priority**: Medium
+
+---
+
+## Cross-Cutting Requirements
+
+### Story: MON-001 - System Monitoring and Health Checks
+**As a** system administrator  
+**I want** comprehensive monitoring of the integrated system  
+**So that** I can proactively identify and resolve issues
+
+**Acceptance Criteria**:
+- **WHEN** system components are running **THEN** health check endpoints report accurate status
+- **WHEN** performance issues occur **THEN** monitoring alerts provide timely notifications
+- **FOR** all critical metrics **VERIFY** they are tracked and available via monitoring interfaces
+- **WHEN** system errors occur **THEN** detailed logging provides sufficient debugging information
+
+**Technical Notes**:
+- Health check endpoint implementation
+- Performance monitoring and alerting
+- Structured logging throughout the system
 
 **Story Points**: 8  
 **Priority**: Medium
 
-## Epic: System Integration and API
+### Story: DOC-001 - Comprehensive Documentation and Tutorials
+**As a** new user or developer  
+**I want** complete documentation and tutorials for the Graphiti integration  
+**So that** I can successfully deploy and use the enhanced system
 
-### Story: SI-001 - FastAPI Backend Selection
-**As a** API user  
-**I want** to specify which backend to use through API parameters  
-**So that** I can choose the appropriate backend for each operation
-
-**Acceptance Criteria** (EARS format):
-- **WHEN** I call API endpoints **THEN** I should be able to specify backend preference
-- **FOR** backend parameter **VERIFY** validation ensures only supported backends are accepted
-- **WHEN** no backend is specified **THEN** API should use configured default backend
-- **IF** specified backend is unavailable **THEN** API should return appropriate error messages
-- **FOR** API responses **VERIFY** backend information is included in response metadata
+**Acceptance Criteria**:
+- **WHEN** I access the documentation **THEN** it provides complete API reference and usage examples
+- **WHEN** I follow tutorials **THEN** they guide me through complete integration workflows
+- **FOR** all features **VERIFY** they are documented with clear examples and use cases
+- **WHEN** I encounter issues **THEN** troubleshooting guides provide effective solutions
 
 **Technical Notes**:
-- Add backend parameter to relevant API endpoints
-- Implement backend availability checking
-- Include backend information in response headers
-- Provide clear error messages for backend issues
+- API documentation generation
+- Tutorial and example creation
+- Troubleshooting and FAQ development
 
-**Story Points**: 4  
+**Story Points**: 13  
 **Priority**: Medium
 
-### Story: SI-002 - Graphiti-Specific API Endpoints
-**As a** developer using Graphiti features  
-**I want** specialized API endpoints for knowledge graph operations  
-**So that** I can access advanced Graphiti functionality
+## Story Summary
 
-**Acceptance Criteria** (EARS format):
-- **WHEN** using Graphiti backend **THEN** additional endpoints should be available for graph operations
-- **FOR** entity queries **VERIFY** endpoints support entity-centric retrieval and relationship exploration
-- **WHEN** exploring communities **THEN** endpoints should provide community information and membership
-- **IF** temporal queries are needed **THEN** endpoints should support time-based filtering and analysis
-- **FOR** graph statistics **VERIFY** endpoints provide comprehensive graph metrics and health information
+| Epic | High Priority Stories | Medium Priority Stories | Low Priority Stories |
+|------|----------------------|------------------------|---------------------|
+| Direct Library Integration | 2 | 0 | 0 |
+| Multimodal Content Processing | 2 | 1 | 0 |
+| Knowledge Graph Construction | 2 | 1 | 0 |
+| REST Service Implementation | 1 | 1 | 1 |
+| Migration and Compatibility | 1 | 1 | 0 |
+| Performance and Scalability | 0 | 1 | 1 |
+| Security and Compliance | 0 | 1 | 1 |
+| Development and Operations | 1 | 1 | 0 |
+| Cross-Cutting Requirements | 0 | 2 | 0 |
 
-**Technical Notes**:
-- Add /graphiti/entities endpoint for entity operations
-- Add /graphiti/communities endpoint for community exploration  
-- Add /graphiti/temporal endpoint for time-based queries
-- Add /graphiti/stats endpoint for graph statistics
+**Total Story Points**: 340 points  
+**Estimated Timeline**: 14-18 weeks with 2-3 person team  
+**High Priority Focus**: 9 stories (158 points) - Weeks 1-8  
+**Medium Priority Focus**: 10 stories (147 points) - Weeks 9-16  
+**Low Priority Focus**: 4 stories (35 points) - Weeks 17-18
 
-**Story Points**: 6  
-**Priority**: Low
+## Implementation Roadmap
 
-### Story: SI-003 - Monitoring and Health Checks
-**As a** system administrator  
-**I want** comprehensive monitoring and health check capabilities  
-**So that** I can ensure the integrated system is operating correctly
+### Phase 1: Foundation (Weeks 1-4)
+- **INT-001**: Direct library integration
+- **INT-002**: Source-based build system  
+- **DEV-001**: Testing framework
+- **MIG-002**: API compatibility
 
-**Acceptance Criteria** (EARS format):
-- **WHEN** I check system health **THEN** status of both backends should be reported
-- **FOR** performance monitoring **VERIFY** metrics for both LightRAG and Graphiti operations are tracked
-- **WHEN** errors occur **THEN** detailed error information should be logged and accessible
-- **IF** backend connectivity fails **THEN** health checks should detect and report issues
-- **FOR** operational metrics **VERIFY** processing times, success rates, and resource usage are monitored
+### Phase 2: Core Processing (Weeks 5-10)
+- **PROC-001**: Document to episode conversion
+- **PROC-002**: Image episode processing
+- **GRAPH-001**: Entity extraction
+- **GRAPH-002**: Cross-modal relationships
+- **API-001**: Document processing APIs
 
-**Technical Notes**:
-- Implement health check endpoints for both backends
-- Add comprehensive logging for backend operations
-- Include performance metrics collection
-- Provide operational dashboards and alerting
+### Phase 3: Advanced Features (Weeks 11-16)
+- **PROC-003**: Table and equation processing
+- **GRAPH-003**: Community detection
+- **API-002**: Advanced query endpoints
+- **PERF-001**: Performance optimization
+- **MIG-001**: Data migration tools
 
-**Story Points**: 5  
-**Priority**: Low
-
-## Epic: Migration and Compatibility
-
-### Story: MC-001 - Smooth Migration Path
-**As a** existing RAG-Anything user  
-**I want** a clear migration path from LightRAG to Graphiti  
-**So that** I can upgrade my system without data loss or significant downtime
-
-**Acceptance Criteria** (EARS format):
-- **WHEN** I migrate from LightRAG to Graphiti **THEN** existing document data should be preserved
-- **FOR** migration process **VERIFY** step-by-step documentation and tools are provided
-- **WHEN** migration is in progress **THEN** system should support gradual backend transition
-- **IF** migration fails **THEN** rollback procedures should restore original functionality
-- **FOR** migrated data **VERIFY** knowledge graph construction produces equivalent or improved results
-
-**Technical Notes**:
-- Develop data migration utilities
-- Support parallel backend operation during migration
-- Provide validation tools for migration success
-- Create rollback procedures and documentation
-
-**Story Points**: 10  
-**Priority**: Medium
-
-### Story: MC-002 - Configuration Compatibility
-**As a** system integrator  
-**I want** configuration options to be compatible between backends  
-**So that** I can maintain consistent system behavior
-
-**Acceptance Criteria** (EARS format):
-- **WHEN** I switch backends **THEN** common configuration options should work identically
-- **FOR** backend-specific settings **VERIFY** clear documentation explains differences and requirements
-- **WHEN** invalid configurations are used **THEN** system should provide helpful error messages
-- **IF** configurations conflict **THEN** validation should prevent system startup
-- **FOR** configuration management **VERIFY** tools support both backends consistently
-
-**Technical Notes**:
-- Standardize common configuration parameters
-- Document backend-specific configuration requirements
-- Implement comprehensive configuration validation
-- Provide configuration migration assistance
-
-**Story Points**: 4  
-**Priority**: Medium
-
-## Implementation Priority Summary
-
-### High Priority (Must Have)
-- BA-001: Backend Interface Definition
-- BA-002: LightRAG Backend Wrapper  
-- MC-001: Episode Creation from Text Content
-- MC-002: Episode Creation from Image Content
-- MC-003: Episode Creation from Table Content
-- KG-001: Entity Extraction from Multimodal Content
-- KG-002: Relationship Extraction Across Content Types
-
-### Medium Priority (Should Have)
-- BA-003: Backend Selection Configuration
-- MC-004: Episode Creation from Mathematical Content
-- KG-003: Temporal Modeling of Document Evolution
-- QR-001: Hybrid Search with Graph Context
-- QR-002: Cross-Modal Content Retrieval
-- QR-003: Entity-Centric Information Retrieval
-- SI-001: FastAPI Backend Selection
-- MC-001: Smooth Migration Path
-- MC-002: Configuration Compatibility
-
-### Low Priority (Could Have)
-- KG-004: Community Detection for Knowledge Domains
-- SI-002: Graphiti-Specific API Endpoints
-- SI-003: Monitoring and Health Checks
-
-**Total Story Points**: 140  
-**Estimated Development Time**: 16-20 weeks with dedicated team
+### Phase 4: Production Ready (Weeks 17-18)
+- **SEC-001**: Security implementation
+- **MON-001**: Monitoring and health checks
+- **DOC-001**: Documentation completion
+- Final integration testing and optimization

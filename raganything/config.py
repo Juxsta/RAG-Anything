@@ -118,11 +118,13 @@ class RAGAnythingConfig:
     graphiti_group_id: str = field(default=get_env_value("GRAPHITI_GROUP_ID", "default", str))
     """Default group ID for Graphiti episodes."""
 
+    # Database Configuration
     graphiti_graph_provider: str = field(
         default=get_env_value("GRAPHITI_GRAPH_PROVIDER", "falkordb", str)
     )
     """Graph provider for Graphiti: 'falkordb' or 'neo4j'."""
 
+    # FalkorDB Configuration
     graphiti_graph_host: str = field(
         default=get_env_value("GRAPHITI_GRAPH_HOST", "localhost", str)
     )
@@ -142,6 +144,118 @@ class RAGAnythingConfig:
         default=get_env_value("GRAPHITI_GRAPH_PASSWORD", None, str)
     )
     """Password for the graph database (optional)."""
+
+    # Neo4j Configuration
+    graphiti_neo4j_uri: str = field(
+        default=get_env_value("GRAPHITI_NEO4J_URI", "bolt://localhost:7687", str)
+    )
+    """Neo4j URI for graph database connection."""
+
+    graphiti_neo4j_user: str = field(
+        default=get_env_value("GRAPHITI_NEO4J_USER", "neo4j", str)
+    )
+    """Neo4j username."""
+
+    graphiti_neo4j_password: str = field(
+        default=get_env_value("GRAPHITI_NEO4J_PASSWORD", "password", str)
+    )
+    """Neo4j password."""
+
+    # LLM Configuration for Graphiti
+    graphiti_llm_provider: str = field(
+        default=get_env_value("GRAPHITI_LLM_PROVIDER", "openai", str)
+    )
+    """LLM provider for Graphiti: 'openai', 'anthropic', or 'custom'."""
+
+    graphiti_llm_model: str = field(
+        default=get_env_value("GRAPHITI_LLM_MODEL", "gpt-4o-mini", str)
+    )
+    """LLM model name for Graphiti operations."""
+
+    graphiti_llm_api_key: Optional[str] = field(
+        default=get_env_value("GRAPHITI_LLM_API_KEY", None, str)
+    )
+    """API key for LLM provider (falls back to OPENAI_API_KEY if not set)."""
+
+    graphiti_llm_base_url: Optional[str] = field(
+        default=get_env_value("GRAPHITI_LLM_BASE_URL", None, str)
+    )
+    """Base URL for LLM provider (for custom endpoints)."""
+
+    # Embedder Configuration for Graphiti
+    graphiti_embedder_provider: str = field(
+        default=get_env_value("GRAPHITI_EMBEDDER_PROVIDER", "openai", str)
+    )
+    """Embedder provider for Graphiti."""
+
+    graphiti_embedder_model: str = field(
+        default=get_env_value("GRAPHITI_EMBEDDER_MODEL", "text-embedding-3-small", str)
+    )
+    """Embedder model for generating embeddings."""
+
+    graphiti_embedder_api_key: Optional[str] = field(
+        default=get_env_value("GRAPHITI_EMBEDDER_API_KEY", None, str)
+    )
+    """API key for embedder provider."""
+
+    # Episode Processing Configuration
+    preserve_document_structure: bool = field(
+        default=get_env_value("PRESERVE_DOCUMENT_STRUCTURE", True, bool)
+    )
+    """Whether to preserve document structure in episodes."""
+
+    store_raw_episode_content: bool = field(
+        default=get_env_value("STORE_RAW_EPISODE_CONTENT", True, bool)
+    )
+    """Whether to store raw episode content in the graph database."""
+
+    # Performance Configuration
+    graphiti_max_coroutines: Optional[int] = field(
+        default=get_env_value("GRAPHITI_MAX_COROUTINES", None, int)
+    )
+    """Maximum number of concurrent operations for Graphiti."""
+
+    graphiti_batch_size: int = field(
+        default=get_env_value("GRAPHITI_BATCH_SIZE", 50, int)
+    )
+    """Batch size for processing episodes."""
+
+    graphiti_episode_window_len: int = field(
+        default=get_env_value("GRAPHITI_EPISODE_WINDOW_LEN", 10, int)
+    )
+    """Number of previous episodes to consider for context."""
+
+    # Caching Configuration
+    enable_graphiti_cache: bool = field(
+        default=get_env_value("ENABLE_GRAPHITI_CACHE", True, bool)
+    )
+    """Enable caching for Graphiti operations."""
+
+    graphiti_cache_ttl: int = field(
+        default=get_env_value("GRAPHITI_CACHE_TTL", 3600, int)
+    )
+    """Cache TTL in seconds for Graphiti operations."""
+
+    # Community Building Configuration
+    auto_build_communities: bool = field(
+        default=get_env_value("AUTO_BUILD_COMMUNITIES", False, bool)
+    )
+    """Whether to automatically build communities."""
+
+    community_update_threshold: int = field(
+        default=get_env_value("COMMUNITY_UPDATE_THRESHOLD", 100, int)
+    )
+    """Number of episodes to process before updating communities."""
+
+    # Model Function Configuration (for custom integrations)
+    llm_model_func: Optional[callable] = field(default=None)
+    """Custom LLM model function for integration."""
+
+    embedding_func: Optional[callable] = field(default=None)
+    """Custom embedding function for integration."""
+
+    vision_model_func: Optional[callable] = field(default=None)
+    """Custom vision model function for multimodal processing."""
 
     def __post_init__(self):
         """Post-initialization setup for backward compatibility"""
@@ -185,3 +299,57 @@ class RAGAnythingConfig:
             stacklevel=2,
         )
         self.parse_method = value
+
+    def get_graphiti_config(self) -> dict:
+        """Get comprehensive Graphiti configuration dictionary"""
+        # Determine the API key to use - prioritize graphiti-specific, fall back to OPENAI_API_KEY
+        import os
+        llm_api_key = self.graphiti_llm_api_key or os.getenv('OPENAI_API_KEY')
+        embedder_api_key = self.graphiti_embedder_api_key or os.getenv('OPENAI_API_KEY')
+        
+        return {
+            # Database configuration
+            'graph_provider': self.graphiti_graph_provider,
+            'falkordb_host': self.graphiti_graph_host,
+            'falkordb_port': self.graphiti_graph_port,
+            'falkordb_database': self.graphiti_graph_database,
+            'falkordb_password': self.graphiti_graph_password,
+            'neo4j_uri': self.graphiti_neo4j_uri,
+            'neo4j_user': self.graphiti_neo4j_user,
+            'neo4j_password': self.graphiti_neo4j_password,
+            
+            # LLM configuration
+            'llm_provider': self.graphiti_llm_provider,
+            'llm_model': self.graphiti_llm_model,
+            'llm_api_key': llm_api_key,
+            'llm_base_url': self.graphiti_llm_base_url,
+            
+            # Embedder configuration
+            'embedder_provider': self.graphiti_embedder_provider,
+            'embedder_model': self.graphiti_embedder_model,
+            'embedder_api_key': embedder_api_key,
+            
+            # Episode processing configuration
+            'default_group_id': self.graphiti_group_id,
+            'preserve_document_structure': self.preserve_document_structure,
+            'store_raw_episode_content': self.store_raw_episode_content,
+            
+            # Performance configuration
+            'max_coroutines': self.graphiti_max_coroutines,
+            'batch_size': self.graphiti_batch_size,
+            'episode_window_len': self.graphiti_episode_window_len,
+            
+            # Caching configuration
+            'enable_cache': self.enable_graphiti_cache,
+            'cache_ttl': self.graphiti_cache_ttl,
+            
+            # Community configuration
+            'auto_build_communities': self.auto_build_communities,
+            'community_update_threshold': self.community_update_threshold,
+        }
+
+    def get_backend_config_kwargs(self) -> dict:
+        """Get backend configuration kwargs for GraphitiDirectBackend"""
+        return {
+            'graphiti_config': self.get_graphiti_config()
+        }

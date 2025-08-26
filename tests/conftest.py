@@ -292,25 +292,107 @@ async def mock_lightrag_backend(backend_config):
 
 
 @pytest.fixture
-async def mock_graphiti_backend(backend_config):
-    """Mock Graphiti backend for testing"""
-    from raganything.backends.graphiti_bridge import GraphitiBridge
+def mock_graphiti_client():
+    """Mock Graphiti client for comprehensive testing"""
+    import uuid
+    from unittest.mock import Mock, AsyncMock
     
-    with patch('raganything.backends.graphiti_bridge.Graphiti') as mock_graphiti:
-        # Configure mock
-        mock_instance = AsyncMock()
-        mock_graphiti.return_value = mock_instance
+    mock_client = AsyncMock()
+    
+    # Mock initialization methods
+    mock_client.build_indices_and_constraints = AsyncMock()
+    mock_client.close = AsyncMock()
+    
+    # Mock episode addition with realistic results
+    mock_episode_result = Mock()
+    mock_episode_result.episode = Mock()
+    mock_episode_result.episode.uuid = str(uuid.uuid4())
+    mock_episode_result.episode.group_id = "test_group"
+    mock_episode_result.episode.name = "Test Episode"
+    mock_episode_result.nodes = [Mock() for _ in range(3)]
+    mock_episode_result.edges = [Mock() for _ in range(2)]
+    mock_episode_result.communities = [Mock()]
+    
+    mock_client.add_episode = AsyncMock(return_value=mock_episode_result)
+    
+    # Mock search with realistic results
+    mock_search_result = Mock()
+    mock_search_result.edges = []
+    mock_search_result.nodes = []
+    mock_search_result.episodes = []
+    mock_search_result.communities = []
+    mock_search_result.edge_reranker_scores = []
+    mock_search_result.node_reranker_scores = []
+    mock_search_result.episode_reranker_scores = []
+    mock_search_result.community_reranker_scores = []
+    
+    # Add realistic search results
+    for i in range(3):
+        edge = Mock()
+        edge.uuid = str(uuid.uuid4())
+        edge.fact = f"Test fact {i+1}"
+        edge.name = f"Test relationship {i+1}"
+        edge.source_uuid = str(uuid.uuid4())
+        edge.target_uuid = str(uuid.uuid4())
+        edge.group_id = "test_group"
+        edge.created_at = datetime.now()
+        edge.episodes = []
+        mock_search_result.edges.append(edge)
+        mock_search_result.edge_reranker_scores.append(0.9 - i * 0.1)
         
-        mock_instance.add_episode.return_value = {"episode_id": "test_episode"}
-        mock_instance.search.return_value = {"results": ["Test search result"]}
-        
-        # Create bridge
-        bridge = GraphitiBridge(backend_config)
-        await bridge.initialize()
-        
-        yield bridge
-        
-        await bridge.finalize()
+        node = Mock()
+        node.uuid = str(uuid.uuid4())
+        node.name = f"Test Entity {i+1}"
+        node.summary = f"Summary of entity {i+1}"
+        node.labels = ["Entity"]
+        node.group_id = "test_group"
+        node.created_at = datetime.now()
+        node.name_embedding = [0.1] * 512
+        mock_search_result.nodes.append(node)
+        mock_search_result.node_reranker_scores.append(0.9 - i * 0.1)
+    
+    mock_client.search_ = AsyncMock(return_value=mock_search_result)
+    
+    # Mock other methods
+    mock_client.retrieve_episodes = AsyncMock(return_value=[])
+    mock_client.build_communities = AsyncMock(return_value=([], []))
+    
+    return mock_client
+
+
+@pytest.fixture
+async def mock_graphiti_backend(backend_config, mock_graphiti_client):
+    """Mock Graphiti Direct backend for testing"""
+    from raganything.backends.graphiti_direct import GraphitiDirectBackend
+    
+    with patch('raganything.backends.graphiti_direct.GRAPHITI_AVAILABLE', True):
+        with patch('raganything.backends.graphiti_direct.Graphiti', return_value=mock_graphiti_client):
+            # Configure backend for testing
+            graphiti_config = backend_config.backend_kwargs.get('graphiti_config', {})
+            backend_config.backend_type = BackendType.GRAPHITI
+            backend_config.backend_kwargs = {
+                'graphiti_config': {
+                    'graph_provider': 'falkordb',
+                    'falkordb_host': 'localhost',
+                    'falkordb_port': 6379,
+                    'falkordb_database': 'test_db',
+                    'llm_provider': 'openai',
+                    'llm_model': 'gpt-4o-mini',
+                    'llm_api_key': 'test_key',
+                    'embedder_provider': 'openai',
+                    'embedder_model': 'text-embedding-3-small',
+                    'embedder_api_key': 'test_key',
+                    'default_group_id': 'test_group',
+                    **graphiti_config
+                }
+            }
+            
+            backend = GraphitiDirectBackend(backend_config)
+            await backend.initialize()
+            
+            yield backend
+            
+            await backend.finalize()
 
 
 @pytest.fixture

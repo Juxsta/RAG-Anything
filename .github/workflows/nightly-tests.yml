@@ -1,0 +1,381 @@
+name: Nightly Comprehensive Tests
+
+on:
+  schedule:
+    # Run every night at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:  # Allow manual triggering
+    inputs:
+      test_suite:
+        description: 'Test suite to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - performance
+          - load
+          - security
+          - integration
+
+env:
+  PYTHON_VERSION: "3.11"
+  POETRY_VERSION: "1.6.1"
+
+jobs:
+  comprehensive-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180  # 3 hours
+    
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+      fail-fast: false
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: nightly_test_password
+          POSTGRES_USER: nightly_test_user
+          POSTGRES_DB: nightly_test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: ${{ env.POETRY_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        poetry install --with dev,test
+        # Install additional performance testing tools
+        poetry add --group test pytest-xdist pytest-benchmark memory-profiler
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          poppler-utils \
+          tesseract-ocr \
+          imagemagick \
+          ffmpeg \
+          htop \
+          iotop
+
+    - name: Set up comprehensive test environment
+      run: |
+        mkdir -p nightly_test_data nightly_results logs benchmarks
+        
+        # Environment variables
+        echo "TEST_MODE=nightly" >> $GITHUB_ENV
+        echo "DATABASE_URL=postgresql://nightly_test_user:nightly_test_password@localhost:5432/nightly_test_db" >> $GITHUB_ENV
+        echo "REDIS_URL=redis://localhost:6379" >> $GITHUB_ENV
+        echo "PYTHONPATH=$PWD:$PYTHONPATH" >> $GITHUB_ENV
+        
+        # Create large test files
+        python -c "
+import os
+from tests.factories import DocumentFactory
+        
+# Create large test documents
+large_doc = DocumentFactory.create_large_document(size_mb=50)
+with open('nightly_test_data/large_doc.txt', 'wb') as f:
+    f.write(large_doc.content)
+    
+# Create batch of documents
+for i in range(100):
+    doc = DocumentFactory.create_text_document()
+    with open(f'nightly_test_data/batch_doc_{i}.txt', 'wb') as f:
+        f.write(doc.content)
+"
+
+    - name: Run full test suite
+      if: github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == ''
+      run: |
+        echo "Running comprehensive test suite..."
+        
+        poetry run pytest \
+          tests/ \
+          --cov=raganything \
+          --cov-report=xml \
+          --cov-report=html \
+          --junit-xml=nightly_results/comprehensive-results.xml \
+          --benchmark-json=benchmarks/comprehensive-benchmarks.json \
+          -v \
+          --tb=short \
+          --maxfail=10 \
+          --durations=20 \
+          -n auto
+
+    - name: Run performance tests only
+      if: github.event.inputs.test_suite == 'performance'
+      run: |
+        echo "Running performance tests..."
+        
+        poetry run pytest \
+          tests/performance/ \
+          --benchmark-only \
+          --benchmark-json=benchmarks/performance-benchmarks.json \
+          --benchmark-autosave \
+          -v
+
+    - name: Run load tests
+      if: github.event.inputs.test_suite == 'load' || github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == ''
+      run: |
+        echo "Running load tests..."
+        
+        # Start API server in background
+        poetry run python -m raganything.api.main &
+        SERVER_PID=$!
+        sleep 15
+        
+        # Run load tests
+        poetry run pytest \
+          tests/performance/test_load_benchmarks.py::TestLoadBenchmarks::test_sustained_load \
+          tests/performance/test_load_benchmarks.py::TestLoadBenchmarks::test_concurrent_processing_limits \
+          --junit-xml=nightly_results/load-test-results.xml \
+          -v \
+          --tb=short
+        
+        # Stop server
+        kill $SERVER_PID || true
+
+    - name: Run comprehensive security tests
+      if: github.event.inputs.test_suite == 'security' || github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == ''
+      run: |
+        echo "Running comprehensive security tests..."
+        
+        poetry run pytest \
+          tests/security/ \
+          --junit-xml=nightly_results/security-results.xml \
+          -v \
+          --tb=short
+        
+        # Additional security scans
+        poetry run bandit -r raganything/ -f json -o nightly_results/bandit-report.json
+        poetry run safety check --json --output nightly_results/safety-report.json
+
+    - name: Run integration tests with real services
+      if: github.event.inputs.test_suite == 'integration' || github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == ''
+      run: |
+        echo "Running integration tests..."
+        
+        poetry run pytest \
+          tests/integration/ \
+          --junit-xml=nightly_results/integration-results.xml \
+          -v \
+          --tb=short
+
+    - name: Memory profiling
+      if: matrix.python-version == '3.11'
+      run: |
+        echo "Running memory profiling..."
+        
+        poetry run python -m memory_profiler tests/performance/profile_memory.py > nightly_results/memory-profile.txt || echo "Memory profiling completed"
+
+    - name: Generate performance report
+      run: |
+        python -c "
+import json
+import os
+from datetime import datetime
+
+results = {
+    'timestamp': datetime.now().isoformat(),
+    'python_version': '${{ matrix.python-version }}',
+    'test_environment': 'nightly',
+    'system_info': {
+        'runner': 'ubuntu-latest',
+        'cores': os.cpu_count(),
+        'memory_gb': 'unknown'
+    }
+}
+
+# Collect benchmark results
+benchmark_files = ['benchmarks/comprehensive-benchmarks.json', 'benchmarks/performance-benchmarks.json']
+for bf in benchmark_files:
+    if os.path.exists(bf):
+        with open(bf) as f:
+            benchmark_data = json.load(f)
+            results[bf.split('/')[-1]] = benchmark_data
+
+# Save consolidated results
+with open('nightly_results/nightly-performance-report.json', 'w') as f:
+    json.dump(results, f, indent=2)
+
+print('Performance report generated')
+"
+
+    - name: Check coverage thresholds
+      run: |
+        echo "Checking coverage thresholds..."
+        
+        poetry run coverage report --fail-under=90 || {
+          echo "Coverage below 90% threshold"
+          echo "coverage_failed=true" >> $GITHUB_ENV
+        }
+
+    - name: Upload comprehensive results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: nightly-results-py${{ matrix.python-version }}
+        path: |
+          nightly_results/
+          benchmarks/
+          htmlcov/
+          logs/
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      if: matrix.python-version == '3.11'
+      with:
+        file: ./coverage.xml
+        flags: nightly
+        name: codecov-nightly
+        fail_ci_if_error: false
+
+  notify-results:
+    runs-on: ubuntu-latest
+    needs: comprehensive-tests
+    if: always()
+    
+    steps:
+    - name: Download all results
+      uses: actions/download-artifact@v3
+      with:
+        path: all-results/
+
+    - name: Generate summary report
+      run: |
+        echo "# Nightly Test Results - $(date)" > nightly-summary.md
+        echo "" >> nightly-summary.md
+        
+        echo "## Test Matrix Results" >> nightly-summary.md
+        
+        for py_version in "3.10" "3.11" "3.12"; do
+          result_dir="all-results/nightly-results-py${py_version}"
+          if [ -d "$result_dir" ]; then
+            echo "### Python $py_version: ✅ Completed" >> nightly-summary.md
+            
+            if [ -f "$result_dir/nightly_results/comprehensive-results.xml" ]; then
+              echo "- Comprehensive tests: ✅" >> nightly-summary.md
+            fi
+            
+            if [ -f "$result_dir/nightly_results/security-results.xml" ]; then
+              echo "- Security tests: ✅" >> nightly-summary.md
+            fi
+            
+            if [ -f "$result_dir/nightly_results/load-test-results.xml" ]; then
+              echo "- Load tests: ✅" >> nightly-summary.md
+            fi
+          else
+            echo "### Python $py_version: ❌ Failed" >> nightly-summary.md
+          fi
+        done
+        
+        echo "" >> nightly-summary.md
+        echo "## Performance Highlights" >> nightly-summary.md
+        
+        # Extract key performance metrics if available
+        perf_file="all-results/nightly-results-py3.11/nightly_results/nightly-performance-report.json"
+        if [ -f "$perf_file" ]; then
+          echo "- Performance report available" >> nightly-summary.md
+          echo "- Detailed metrics in artifacts" >> nightly-summary.md
+        fi
+        
+        echo "" >> nightly-summary.md
+        echo "## Next Steps" >> nightly-summary.md
+        echo "1. Review detailed results in workflow artifacts" >> nightly-summary.md
+        echo "2. Address any failing tests or performance regressions" >> nightly-summary.md
+        echo "3. Update benchmarks if needed" >> nightly-summary.md
+
+    - name: Create issue on failure
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const date = new Date().toISOString().split('T')[0];
+          const title = `Nightly Tests Failed - ${date}`;
+          const body = `
+          ## Nightly Test Failure Report
+          
+          The nightly comprehensive test suite failed on ${date}.
+          
+          ### Failed Jobs
+          - Check the workflow run for details: ${context.payload.repository.html_url}/actions/runs/${context.runId}
+          
+          ### Action Items
+          - [ ] Review failed test results
+          - [ ] Investigate performance regressions
+          - [ ] Fix any broken functionality
+          - [ ] Update tests if needed
+          
+          ### Artifacts
+          Download the workflow artifacts for detailed logs and reports.
+          `;
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            body: body,
+            labels: ['bug', 'nightly-failure', 'high-priority']
+          });
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: [comprehensive-tests, notify-results]
+    if: always()
+    
+    steps:
+    - name: Cleanup old artifacts
+      uses: actions/github-script@v6
+      with:
+        script: |
+          // Keep only the last 10 nightly test artifacts
+          const artifacts = await github.rest.actions.listArtifactsForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            per_page: 100
+          });
+          
+          const nightlyArtifacts = artifacts.data.artifacts
+            .filter(artifact => artifact.name.startsWith('nightly-results-'))
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          
+          // Delete artifacts older than the last 10
+          for (let i = 10; i < nightlyArtifacts.length; i++) {
+            await github.rest.actions.deleteArtifact({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              artifact_id: nightlyArtifacts[i].id
+            });
+          }

@@ -21,8 +21,8 @@ except ImportError:
     # Define fallback enum
     class EpisodeType(Enum):
         message = "message"
-        observation = "observation"
-        action = "action"
+        json = "json"
+        text = "text"
 
 
 class ContentType(Enum):
@@ -33,6 +33,10 @@ class ContentType(Enum):
     EQUATION = "equation"
     CONTEXT = "context"
     MIXED = "mixed"
+    CODE = "code"
+    DIAGRAM = "diagram"
+    CHART = "chart"
+    METADATA = "metadata"
 
 
 @dataclass
@@ -177,30 +181,78 @@ class EpisodeConverter:
             return None
     
     def _identify_content_types(self, content: Dict[str, Any]) -> List[ContentType]:
-        """Identify the types of content present"""
+        """Identify the types of content present with enhanced detection"""
         content_types = []
         
-        # Check for different content types
-        if any(key in content for key in ['text', 'content', 'body']):
+        # Check for different content types with expanded detection
+        if any(key in content for key in ['text', 'content', 'body', 'raw_text']):
             content_types.append(ContentType.TEXT)
         
-        if any(key in content for key in ['image', 'image_path', 'image_caption', 'image_description']):
+        if any(key in content for key in ['image', 'image_path', 'image_caption', 'image_description', 'image_data', 'figure']):
             content_types.append(ContentType.IMAGE)
         
-        if any(key in content for key in ['table', 'table_content', 'table_data']):
+        if any(key in content for key in ['table', 'table_content', 'table_data', 'tabular_data', 'csv_data']):
             content_types.append(ContentType.TABLE)
         
-        if any(key in content for key in ['equation', 'formula', 'math']):
+        if any(key in content for key in ['equation', 'formula', 'math', 'latex', 'mathematical_expression']):
             content_types.append(ContentType.EQUATION)
+        
+        if any(key in content for key in ['code', 'source_code', 'programming_code', 'script']):
+            content_types.append(ContentType.CODE)
+        
+        if any(key in content for key in ['diagram', 'flowchart', 'schema', 'architecture']):
+            content_types.append(ContentType.DIAGRAM)
+        
+        if any(key in content for key in ['chart', 'graph', 'plot', 'visualization']):
+            content_types.append(ContentType.CHART)
         
         if 'context' in content:
             content_types.append(ContentType.CONTEXT)
+        
+        # Check for metadata indicators
+        if any(key in content for key in ['metadata', 'page', 'page_number', 'section', 'title', 'author']):
+            content_types.append(ContentType.METADATA)
+        
+        # Enhanced content analysis based on text patterns
+        text_content = self._extract_text_for_analysis(content)
+        if text_content:
+            content_types.extend(self._analyze_text_patterns(text_content))
         
         # If multiple types, mark as mixed
         if len(content_types) > 1:
             content_types.append(ContentType.MIXED)
         
         return content_types if content_types else [ContentType.TEXT]
+    
+    def _extract_text_for_analysis(self, content: Dict[str, Any]) -> str:
+        """Extract text content for pattern analysis"""
+        text_sources = ['text', 'content', 'body', 'raw_text', 'description']
+        for key in text_sources:
+            if key in content and content[key]:
+                return str(content[key])
+        return ""
+    
+    def _analyze_text_patterns(self, text: str) -> List[ContentType]:
+        """Analyze text patterns to identify additional content types"""
+        additional_types = []
+        text_lower = text.lower()
+        
+        # Code pattern detection
+        code_indicators = ['def ', 'function ', 'class ', 'import ', 'from ', '#!/', 'SELECT ', 'INSERT ', 'UPDATE ']
+        if any(indicator in text for indicator in code_indicators):
+            additional_types.append(ContentType.CODE)
+        
+        # Mathematical content detection
+        math_indicators = ['∑', '∫', '∂', '≈', '≤', '≥', '∞', '±', 'equation', 'theorem', 'proof']
+        if any(indicator in text_lower for indicator in math_indicators):
+            additional_types.append(ContentType.EQUATION)
+        
+        # Diagram/Chart references
+        visual_indicators = ['figure', 'chart', 'graph', 'diagram', 'plot', 'visualization']
+        if any(f'see {indicator}' in text_lower or f'in {indicator}' in text_lower for indicator in visual_indicators):
+            additional_types.append(ContentType.DIAGRAM)
+        
+        return additional_types
     
     def _generate_episode_name(
         self,
@@ -238,11 +290,11 @@ class EpisodeConverter:
         content: Dict[str, Any],
         content_types: List[ContentType]
     ) -> str:
-        """Create the main episode body content"""
+        """Create the main episode body content with enhanced multimodal support"""
         sections = []
         
         # Add main text content
-        for text_key in ['text', 'content', 'body']:
+        for text_key in ['text', 'content', 'body', 'raw_text']:
             if text_key in content and content[text_key]:
                 sections.append(str(content[text_key]))
                 break
@@ -251,39 +303,77 @@ class EpisodeConverter:
         if 'context' in content and content['context']:
             sections.append(f"Context: {content['context']}")
         
-        # Add image descriptions
-        for image_key in ['image_caption', 'image_description']:
+        # Add image descriptions with enhanced handling
+        image_keys = ['image_caption', 'image_description', 'figure', 'image_data']
+        for image_key in image_keys:
             if image_key in content and content[image_key]:
-                sections.append(f"Image Description: {content[image_key]}")
+                if image_key == 'image_data':
+                    sections.append(f"Image: [Image data present - {len(str(content[image_key]))} characters]")
+                else:
+                    sections.append(f"Visual Content: {content[image_key]}")
                 break
         
-        # Add table content
-        if 'table_content' in content and content['table_content']:
-            sections.append(f"Table Data:\n{content['table_content']}")
-        elif 'table_data' in content and content['table_data']:
-            sections.append(f"Table Data:\n{content['table_data']}")
-        
-        # Add equations
-        for eq_key in ['equation', 'formula', 'math']:
-            if eq_key in content and content[eq_key]:
-                sections.append(f"Mathematical Expression: {content[eq_key]}")
+        # Add table content with multiple format support
+        table_keys = ['table_content', 'table_data', 'tabular_data', 'csv_data']
+        for table_key in table_keys:
+            if table_key in content and content[table_key]:
+                sections.append(f"Tabular Data:\n{content[table_key]}")
                 break
         
-        # Add any additional structured content
-        additional_content = []
-        skip_keys = {
-            'text', 'content', 'body', 'context', 'image_caption', 
-            'image_description', 'table_content', 'table_data', 
-            'equation', 'formula', 'math', 'title', 'name', 'timestamp'
+        # Add mathematical content
+        math_keys = ['equation', 'formula', 'math', 'latex', 'mathematical_expression']
+        for math_key in math_keys:
+            if math_key in content and content[math_key]:
+                sections.append(f"Mathematical Expression: {content[math_key]}")
+                break
+        
+        # Add code content
+        code_keys = ['code', 'source_code', 'programming_code', 'script']
+        for code_key in code_keys:
+            if code_key in content and content[code_key]:
+                sections.append(f"Code:\n```\n{content[code_key]}\n```")
+                break
+        
+        # Add diagram/chart content
+        visual_keys = ['diagram', 'flowchart', 'schema', 'architecture', 'chart', 'graph', 'plot', 'visualization']
+        for visual_key in visual_keys:
+            if visual_key in content and content[visual_key]:
+                sections.append(f"Visual Element ({visual_key.replace('_', ' ').title()}): {content[visual_key]}")
+                break
+        
+        # Add metadata in structured format
+        metadata_keys = ['page', 'page_number', 'section', 'author', 'date', 'source']
+        metadata_items = []
+        for meta_key in metadata_keys:
+            if meta_key in content and content[meta_key]:
+                metadata_items.append(f"{meta_key.replace('_', ' ').title()}: {content[meta_key]}")
+        
+        if metadata_items:
+            sections.append(f"Document Metadata:\n" + "\n".join(metadata_items))
+        
+        # Add any additional structured content (excluding processed keys)
+        processed_keys = {
+            'text', 'content', 'body', 'raw_text', 'context', 
+            'image_caption', 'image_description', 'figure', 'image_data',
+            'table_content', 'table_data', 'tabular_data', 'csv_data',
+            'equation', 'formula', 'math', 'latex', 'mathematical_expression',
+            'code', 'source_code', 'programming_code', 'script',
+            'diagram', 'flowchart', 'schema', 'architecture', 'chart', 'graph', 'plot', 'visualization',
+            'page', 'page_number', 'section', 'author', 'date', 'source',
+            'title', 'name', 'timestamp', 'uuid', 'metadata'
         }
         
+        additional_content = []
         for key, value in content.items():
-            if key not in skip_keys and value:
+            if key not in processed_keys and value:
                 formatted_key = key.replace('_', ' ').title()
-                additional_content.append(f"{formatted_key}: {value}")
+                if isinstance(value, (dict, list)):
+                    additional_content.append(f"{formatted_key}: {str(value)[:200]}...")
+                else:
+                    additional_content.append(f"{formatted_key}: {value}")
         
         if additional_content:
-            sections.extend(additional_content)
+            sections.append("Additional Content:\n" + "\n".join(additional_content))
         
         return "\n\n".join(sections)
     
@@ -291,13 +381,13 @@ class EpisodeConverter:
         """Determine the appropriate Graphiti episode type"""
         # Rules for episode type determination
         if ContentType.IMAGE in content_types:
-            return EpisodeType.observation  # Visual observations
+            return EpisodeType.text  # Visual content as text description
         elif ContentType.TABLE in content_types:
-            return EpisodeType.observation  # Data observations
+            return EpisodeType.text  # Data content as text
         elif ContentType.EQUATION in content_types:
-            return EpisodeType.observation  # Mathematical observations
+            return EpisodeType.text  # Mathematical content as text
         elif ContentType.MIXED in content_types:
-            return EpisodeType.observation  # Complex mixed content
+            return EpisodeType.text  # Complex mixed content as text
         else:
             return EpisodeType.message  # Default to message for text content
     

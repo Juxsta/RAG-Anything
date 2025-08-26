@@ -167,7 +167,7 @@ class GraphitiBridge(BaseRAGBackend):
                 inserted_relationships=result.get('edges_created', 0) if isinstance(result, dict) else 0,
                 processing_time=processing_time,
                 metadata={
-                    **metadata or {},
+                    **(metadata or {}),
                     'episode_uuid': episode_data['uuid'],
                     'group_id': episode_data['group_id']
                 }
@@ -223,7 +223,7 @@ class GraphitiBridge(BaseRAGBackend):
                 inserted_relationships=result.get('edges_created', 0) if isinstance(result, dict) else 0,
                 processing_time=processing_time,
                 metadata={
-                    **metadata or {},
+                    **(metadata or {}),
                     'episode_uuid': episode_data['uuid'],
                     'content_types': list(content.keys()),
                     'group_id': episode_data['group_id']
