@@ -1,0 +1,80 @@
+# Development dependencies for RAG-Anything
+
+# Testing framework
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.1
+pytest-benchmark>=4.0.0
+pytest-xdist>=3.3.1
+pytest-json-report>=1.5.0
+
+# Coverage reporting
+coverage[toml]>=7.2.0
+
+# Code quality
+black>=23.3.0
+isort>=5.12.0
+flake8>=6.0.0
+pylint>=2.17.0
+mypy>=1.4.0
+bandit>=1.7.5
+safety>=2.3.4
+
+# Documentation
+sphinx>=7.0.0
+sphinx-rtd-theme>=1.2.0
+sphinxcontrib-asyncio>=0.3.0
+myst-parser>=2.0.0
+
+# Pre-commit hooks
+pre-commit>=3.3.0
+
+# Development utilities
+ipython>=8.14.0
+ipdb>=0.13.0
+rich>=13.4.0
+watchdog>=3.0.0
+
+# HTTP client for testing
+httpx>=0.24.0
+requests>=2.31.0
+
+# Mock Redis for testing
+fakeredis>=2.16.0
+
+# System monitoring (for testing)
+psutil>=5.9.0
+
+# Time utilities
+python-dateutil>=2.8.2
+freezegun>=1.2.2
+
+# JSON utilities
+orjson>=3.9.0
+
+# Security testing
+cryptography>=41.0.0
+
+# Performance testing
+memory-profiler>=0.61.0
+py-spy>=0.3.14
+
+# Async testing utilities
+aiofiles>=23.1.0
+aiohttp>=3.8.0
+
+# Linting plugins
+flake8-docstrings>=1.7.0
+flake8-import-order>=0.18.2
+flake8-bugbear>=23.7.10
+flake8-comprehensions>=3.14.0
+
+# Type checking stubs
+types-redis>=4.6.0.1
+types-requests>=2.31.0.1
+types-setuptools>=68.0.0.1
+
+# Jupyter for development
+jupyter>=1.0.0
+notebook>=7.0.0

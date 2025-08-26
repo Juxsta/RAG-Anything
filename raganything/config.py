@@ -5,7 +5,7 @@ Contains configuration dataclasses with environment variable support
 """
 
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 from lightrag.utils import get_env_value
 
 
@@ -102,6 +102,46 @@ class RAGAnythingConfig:
 
     content_format: str = field(default=get_env_value("CONTENT_FORMAT", "minerU", str))
     """Default content format for context extraction when processing documents."""
+
+    # Backend Selection Configuration
+    # ---
+    backend_type: str = field(default=get_env_value("RAG_BACKEND_TYPE", "lightrag", str))
+    """Backend type selection: 'lightrag' or 'graphiti'."""
+
+    enable_backend_fallback: bool = field(
+        default=get_env_value("ENABLE_BACKEND_FALLBACK", True, bool)
+    )
+    """Enable fallback to LightRAG if Graphiti backend fails."""
+
+    # Graphiti-specific Configuration
+    # ---
+    graphiti_group_id: str = field(default=get_env_value("GRAPHITI_GROUP_ID", "default", str))
+    """Default group ID for Graphiti episodes."""
+
+    graphiti_graph_provider: str = field(
+        default=get_env_value("GRAPHITI_GRAPH_PROVIDER", "falkordb", str)
+    )
+    """Graph provider for Graphiti: 'falkordb' or 'neo4j'."""
+
+    graphiti_graph_host: str = field(
+        default=get_env_value("GRAPHITI_GRAPH_HOST", "localhost", str)
+    )
+    """Host for the graph database."""
+
+    graphiti_graph_port: int = field(
+        default=get_env_value("GRAPHITI_GRAPH_PORT", 6379, int)
+    )
+    """Port for the graph database."""
+
+    graphiti_graph_database: str = field(
+        default=get_env_value("GRAPHITI_GRAPH_DATABASE", "rag_graph", str)
+    )
+    """Database name for the graph."""
+
+    graphiti_graph_password: Optional[str] = field(
+        default=get_env_value("GRAPHITI_GRAPH_PASSWORD", None, str)
+    )
+    """Password for the graph database (optional)."""
 
     def __post_init__(self):
         """Post-initialization setup for backward compatibility"""
